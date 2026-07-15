@@ -13,6 +13,8 @@ from app.models.auth import (
 from app.services.auth_service import (
     create_user,
     authenticate_user,
+    count_users,
+    list_users,
 )
 
 router = APIRouter(
@@ -28,12 +30,24 @@ async def signup(
     request: SignupRequest,
     session: AsyncSession = Depends(get_session),
 ):
+    existing_count = await count_users(session)
+
+    if existing_count == 0:
+        # Bootstrap: the very first account in the system becomes admin.
+        role = "admin"
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Signup is disabled. Ask an admin to create your account.",
+        )
+
     try:
         await create_user(
             session,
             request.full_name,
             request.email,
             request.password,
+            role,
         )
 
     except ValueError as exc:
@@ -45,6 +59,58 @@ async def signup(
     return {
         "message": "User created successfully"
     }
+
+
+@router.post(
+    "/users",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_user_by_admin(
+    request: SignupRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+
+    try:
+        await create_user(
+            session,
+            request.full_name,
+            request.email,
+            request.password,
+            request.role,
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
+
+    return {
+        "message": "User created successfully"
+    }
+
+
+@router.get(
+    "/users",
+    response_model=list[UserResponse],
+)
+async def get_users(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+
+    return await list_users(session)
 
 @router.post(
     "/login",

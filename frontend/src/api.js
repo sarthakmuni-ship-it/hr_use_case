@@ -88,6 +88,15 @@ export const accountApi = {
   me: () => apiRequest("/auth/me"),
 };
 
+export const usersApi = {
+  list: () => apiRequest("/auth/users"),
+  create: (form) =>
+    apiRequest("/auth/users", {
+      method: "POST",
+      body: JSON.stringify(form),
+    }),
+};
+
 export async function downloadAttachment(attachment) {
   const response = await fetch(`${API_BASE_URL}/attachments/${attachment.id}/download`, {
     headers: {

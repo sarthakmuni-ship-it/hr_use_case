@@ -5,8 +5,9 @@ import Sidebar from "./components/Sidebar";
 import LogsPage from "./pages/LogsPage";
 import MailsPage from "./pages/MailsPage";
 import SettingsPage from "./pages/SettingsPage";
+import UsersPage from "./pages/UsersPage";
 
-const pages = new Set(["mails", "logs", "settings"]);
+const pages = new Set(["mails", "logs", "settings", "users"]);
 
 function viewFromHash() {
   const page = window.location.hash.replace("#/", "");
@@ -102,6 +103,9 @@ export default function App() {
               darkMode={darkMode}
               onDarkModeChange={setDarkMode}
             />
+          )}
+          {activeView === "users" && account?.role === "admin" && (
+            <UsersPage account={account} />
           )}
         </main>
       </div>

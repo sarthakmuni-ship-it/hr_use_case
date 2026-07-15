@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import hash_password
 
@@ -21,11 +21,24 @@ async def get_user_by_email(
 
     return result.scalar_one_or_none()
 
+async def count_users(db: AsyncSession) -> int:
+    """Count total users in the system (used to detect first-time bootstrap)."""
+
+    result = await db.execute(select(func.count()).select_from(User))
+    return result.scalar_one()
+
+async def list_users(db: AsyncSession) -> list[User]:
+    """Return all users, ordered by id."""
+
+    result = await db.execute(select(User).order_by(User.id))
+    return list(result.scalars().all())
+
 async def create_user(
     db: AsyncSession,
     full_name: str,
     email: str,
     password: str,
+    role: str = "user",
 ) -> User:
     """Create a new user."""
     existing_user = await get_user_by_email(
@@ -39,6 +52,7 @@ async def create_user(
         email=email,
         password_hash=hash_password(password),
         is_active=True,
+        role=role,
     )
     db.add(user)
     await db.commit()

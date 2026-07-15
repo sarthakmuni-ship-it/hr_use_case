@@ -1,9 +1,12 @@
+from typing import Literal
+
 from pydantic import BaseModel, EmailStr
 
 class SignupRequest(BaseModel):
     full_name: str
     email: EmailStr
     password: str
+    role: Literal["admin", "user"] = "user"
 
 
 class LoginRequest(BaseModel):
@@ -21,6 +24,7 @@ class UserResponse(BaseModel):
     full_name: str
     email: EmailStr
     is_active: bool
+    role: str
 
     model_config = {
         "from_attributes": True,

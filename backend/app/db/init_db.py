@@ -39,6 +39,10 @@ DECISION_COLUMNS = {
     "sent_reply": "TEXT NULL",
 }
 
+USER_COLUMNS = {
+    "role": "VARCHAR(20) NOT NULL DEFAULT 'user'",
+}
+
 
 def _add_missing_columns(sync_connection, table_name: str, columns: dict[str, str]) -> None:
     inspector = inspect(sync_connection)
@@ -62,4 +66,9 @@ async def initialize_database() -> None:
             _add_missing_columns,
             "verification_decisions",
             DECISION_COLUMNS,
+        )
+        await connection.run_sync(
+            _add_missing_columns,
+            "users",
+            USER_COLUMNS,
         )

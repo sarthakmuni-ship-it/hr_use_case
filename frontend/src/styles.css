@@ -695,7 +695,7 @@ tbody tr:hover {
 }
 
 .logSummary:hover {
-  background: #243653;
+  background: #9bbdf4;
 }
 
 .logSummary small {
@@ -1520,4 +1520,91 @@ textarea {
   .metricCard {
     min-height: 72px;
   }
+}
+
+/* Users page — add user form */
+.userFormGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.userFormGrid .fullSpan {
+  grid-column: 1 / -1;
+}
+
+.passwordField {
+  position: relative;
+}
+
+.passwordField input {
+  padding-right: 40px;
+  width: 100%;
+}
+
+.passwordToggle {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+  position: absolute;
+  right: 8px;
+  top: 30px;
+}
+
+.passwordToggle:hover {
+  color: var(--text-main);
+}
+
+.roleCardGroup {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.roleCard {
+  align-items: flex-start;
+  background: var(--bg-muted);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.roleCard:hover {
+  border-color: var(--primary);
+}
+
+.roleCard.selected {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.roleCardHeader {
+  align-items: center;
+  color: var(--text-main);
+  display: flex;
+  font-weight: 600;
+  gap: 8px;
+}
+
+.roleCard small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+:root[data-theme="light"] .roleCard {
+  background: #f8fafc;
+}
+
+:root[data-theme="light"] .roleCard.selected {
+  background: #dbeafe;
 }
