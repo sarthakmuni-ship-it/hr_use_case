@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, Clock3, Filter, Inbox, RefreshCcw, X } from "lucide-react";
-import { emailsApi } from "../api";
+import { emailsApi, getAttachmentPreview } from "../api";
 import MailList from "../components/MailList";
 import VerificationDetail from "../components/VerificationDetail";
 
@@ -16,6 +16,7 @@ export default function MailsPage({
   const [verification, setVerification] = useState(null);
   const [decisionMessage, setDecisionMessage] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState(null);
   const [filters, setFilters] = useState({
     status: "all",
     fromDate: "",
@@ -108,7 +109,7 @@ export default function MailsPage({
   }
 
   // Decisions update the audit trail and then rehydrate the selected mail for the reviewer.
-  async function saveDecision(decision, replyBody, note = "" ) {
+  async function saveDecision(decision, replyBody, note = "") {
     if (!verification) return;
 
     onLoadingChange(true);
@@ -126,6 +127,24 @@ export default function MailsPage({
     } finally {
       onLoadingChange(false);
     }
+  }
+
+  async function openAttachmentPreview(attachment) {
+    onError("");
+
+    try {
+      const preview = await getAttachmentPreview(attachment);
+      setPreviewAttachment({ ...attachment, ...preview });
+    } catch (err) {
+      onError(err.message);
+    }
+  }
+
+  function closeAttachmentPreview() {
+    if (previewAttachment?.url) {
+      URL.revokeObjectURL(previewAttachment.url);
+    }
+    setPreviewAttachment(null);
   }
 
   useEffect(() => {
@@ -225,6 +244,7 @@ export default function MailsPage({
             onBack={returnToList}
             onDecision={saveDecision}
             decisionMessage={decisionMessage}
+            onPreviewAttachment={openAttachmentPreview}
           />
         ) : (
           <section className="panel emptyState">Loading selected mail...</section>
@@ -275,6 +295,37 @@ export default function MailsPage({
           )}
           <MailList emails={filteredEmails} selectedId={selectedId} onSelect={setSelectedId} />
         </>
+      )}
+      {previewAttachment && (
+        <div className="logModal" onClick={closeAttachmentPreview} role="dialog" aria-modal="true">
+          <div className="logModalPanel attachmentPreviewPanel" onClick={(event) => event.stopPropagation()}>
+            <header className="logModalHeader">
+              <div>
+                <h2>{previewAttachment.filename}</h2>
+              </div>
+              <button
+                aria-label="Close preview"
+                className="iconAction"
+                onClick={closeAttachmentPreview}
+                title="Close"
+                type="button"
+              >
+                <X size={17} />
+              </button>
+            </header>
+            <div className="attachmentPreviewBody">
+              {previewAttachment.contentType?.startsWith("image/") ? (
+                <img alt={previewAttachment.filename} src={previewAttachment.url} />
+              ) : previewAttachment.contentType === "application/pdf" ? (
+                <iframe src={previewAttachment.url} title={previewAttachment.filename} />
+              ) : (
+                <p className="emptyPanelText">
+                  This file type can't be previewed inline. Please download it instead.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );

@@ -1626,3 +1626,30 @@ textarea {
   height: 15px;
   width: 15px;
 }
+
+.attachmentPreviewPanel {
+  max-width: 960px;
+  width: 90vw;
+}
+
+.attachmentPreviewBody {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  max-height: 88vh;
+  overflow: auto;
+  padding: 12px 0;
+}
+
+.attachmentPreviewBody img {
+  border-radius: 6px;
+  max-height: 82vh;
+  max-width: 100%;
+}
+
+.attachmentPreviewBody iframe {
+  border: none;
+  border-radius: 6px;
+  height: 85vh;
+  width: 100%;
+}
