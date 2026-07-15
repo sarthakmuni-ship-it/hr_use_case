@@ -1608,3 +1608,21 @@ textarea {
 :root[data-theme="light"] .roleCard.selected {
   background: #dbeafe;
 }
+
+.forceMatchToggle {
+  align-items: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.forceMatchToggle input[type="checkbox"] {
+  accent-color: var(--primary);
+  cursor: pointer;
+  height: 15px;
+  width: 15px;
+}

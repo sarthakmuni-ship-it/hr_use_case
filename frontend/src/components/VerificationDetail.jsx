@@ -13,11 +13,30 @@ export default function VerificationDetail({
   const [editableReply, setEditableReply] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [submittedEmailId, setSubmittedEmailId] = useState(null);
+  const [overriddenFields, setOverriddenFields] = useState(new Set());
   const isCompleted = verification?.status === "completed";
   const actionSubmitted = submittedEmailId === verification?.email_id;
   const actionLocked = isCompleted || isProcessing || actionSubmitted;
   const hasFieldResults = Boolean(verification?.field_results?.length);
   const hasAttachments = Boolean(verification?.attachments?.length);
+
+  const effectiveAllMatch = hasFieldResults
+   ? verification.field_results.every(
+       (result) => result.matches || overriddenFields.has(result.field),
+     )
+   : verification?.all_fields_match;
+
+  function toggleOverride(fieldName) {
+    setOverriddenFields((current) => {
+      const next = new Set(current);
+      if (next.has(fieldName)) {
+        next.delete(fieldName);
+      } else {
+        next.add(fieldName);
+      }
+      return next;
+    });
+  }
 
   // Sync internal text state and clear processing locks when verification shifts or updates
   useEffect(() => {
@@ -31,16 +50,24 @@ export default function VerificationDetail({
 
   useEffect(() => {
     setSubmittedEmailId(null);
+    setOverriddenFields(new Set());
   }, [verification?.email_id]);
 
   if (!verification) return null;
 
   const handleSendReply = () => {
     if (actionLocked) return;
-    const decisionType = verification.all_fields_match ? "approve_reply" : "reject_reply";
+       const decisionType = effectiveAllMatch ? "approve_reply" : "reject_reply";
+
+    let note = "";
+    if (overriddenFields.size) {
+      const overriddenLabels = [...overriddenFields].map((field) => field.replace(/_/g, " "));
+      note = `Force-matched despite mismatch: ${overriddenLabels.join(", ")}`;
+    }
+
     setSubmittedEmailId(verification.email_id);
     setIsProcessing(true);
-    onDecision(decisionType, editableReply);
+    onDecision(decisionType, editableReply, note);
   };
 
   return (
@@ -84,9 +111,27 @@ export default function VerificationDetail({
                     <span className="subtleCell">Workday</span>
                     {result.workday_value || <span className="emptyText">None</span>}
                   </div>
-                  <span className={`badge ${result.matches ? "badgeMatch" : "badgeMismatch"}`}>
-                    {result.matches ? "Match" : "Mismatch"}
-                  </span>
+                  {!result.matches && !actionLocked && (
+                   <label className="forceMatchToggle" title="Force this field to be treated as matching">
+                     <input
+                       checked={overriddenFields.has(result.field)}
+                       onChange={() => toggleOverride(result.field)}
+                       type="checkbox"
+                     />
+                     Verified Manually
+                   </label>
+                 )}
+                 <span
+                   className={`badge ${
+                     result.matches || overriddenFields.has(result.field) ? "badgeMatch" : "badgeMismatch"
+                   }`}
+                 >
+                   {result.matches
+                    ? "Match"
+                     : overriddenFields.has(result.field)
+                       ? "Forced Match"
+                      : "Mismatch"}
+                 </span>
                 </div>
               ))
             ) : (

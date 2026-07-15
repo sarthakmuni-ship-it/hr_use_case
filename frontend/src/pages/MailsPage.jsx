@@ -108,7 +108,7 @@ export default function MailsPage({
   }
 
   // Decisions update the audit trail and then rehydrate the selected mail for the reviewer.
-  async function saveDecision(decision, replyBody) {
+  async function saveDecision(decision, replyBody, note = "" ) {
     if (!verification) return;
 
     onLoadingChange(true);
@@ -117,7 +117,7 @@ export default function MailsPage({
 
     try {
       // Passes the edited replyBody downstream directly to the backend SMTP routine
-      const result = await emailsApi.decide(verification.email_id, decision, replyBody);
+      const result = await emailsApi.decide(verification.email_id, decision, replyBody, note);
       setDecisionMessage(result.message);
       await loadEmails();
       await loadVerification(verification.email_id);
