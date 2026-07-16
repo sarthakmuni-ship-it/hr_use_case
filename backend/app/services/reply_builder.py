@@ -19,19 +19,31 @@ def build_recommended_reply(
    
     if all_match:
         # Build plain-text data structure representation
-        table_lines = [
-            "Hello,\n",
-            "Based on our background check verification rules, the details match our internal database records:\n",
-            f"{'Field Name':<30} | {'Verified System Value':<30}",
-            "-" * 65
+        rows = [
+            "<p>Hello,</p>",
+            "<p>Based on our background check verification rules, the details match our internal database records:</p>",
+            "<table style='border-collapse:collapse;width:100%;'>",
+            "<thead><tr><th style='border:1px solid #ccc;padding:8px;text-align:left;'>Field Name</th>"
+            "<th style='border:1px solid #ccc;padding:8px;text-align:left;'>Verified System Value</th></tr></thead>",
+            "<tbody>"
         ]
+
         for res in field_results:
             clean_label = res.field.replace("_", " ").title()
             system_value = str(res.workday_value) if res.workday_value is not None else "N/A"
-            table_lines.append(f"{clean_label:<30} | {system_value:<30}")
-           
-        table_lines.append("\nRegards,\nHR Verification Team")
-        body = "\n".join(table_lines)
+            rows.append(
+                "<tr>"
+                f"<td style='border:1px solid #ccc;padding:8px;'>{clean_label}</td>"
+                f"<td style='border:1px solid #ccc;padding:8px;'>{system_value}</td>"
+                "</tr>"
+            )
+
+        rows.extend([
+            "</tbody>",
+            "</table>",
+            "<p>Regards,<br/>HR Verification Team</p>"
+        ])
+        body = "".join(rows)
     else:
         body = (
             "Hello,\n\n"

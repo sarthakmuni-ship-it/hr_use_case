@@ -437,6 +437,7 @@ button {
   letter-spacing: 0.3px;
   padding: 5px 10px;
   white-space: nowrap;
+  color: var(--text-main);
 }
 
 .metricGrid {
@@ -602,7 +603,7 @@ button {
 
 .badgeMatch {
   background: var(--success-bg);
-  color: #86efac;
+  color: #073518;
 }
 
 .badgeMismatch {
