@@ -14,6 +14,16 @@ class UserUpdateRequest(BaseModel):
     is_active: bool | None = None
 
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    email: EmailStr
+    pin: str
+    new_password: str
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str

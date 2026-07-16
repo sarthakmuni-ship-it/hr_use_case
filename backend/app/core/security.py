@@ -47,6 +47,47 @@ def create_access_token(
         algorithm=settings.JWT_ALGORITHM,
     )
 
+
+def create_password_reset_token(
+    subject: str,
+) -> str:
+    expire = datetime.now(
+        timezone.utc
+    ) + timedelta(
+        minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
+    )
+
+    payload = {
+        "sub": subject,
+        "purpose": "password_reset",
+        "exp": expire,
+    }
+
+    return jwt.encode(
+        payload,
+        settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+
+def verify_password_reset_token(
+    token: str,
+) -> str | None:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM],
+        )
+    except InvalidTokenError:
+        return None
+
+    if payload.get("purpose") != "password_reset":
+        return None
+
+    return payload.get("sub")
+
+
 def decode_access_token(
     token: str,
 ) -> dict:

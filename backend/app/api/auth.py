@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user
@@ -10,16 +12,26 @@ from app.models.auth import (
     LoginRequest,
     TokenResponse,
     UserUpdateRequest,
+    PasswordResetRequest,
+    PasswordResetConfirmRequest,
 )
 from app.services.auth_service import (
     create_user,
     authenticate_user,
     count_users,
     list_users,
+    get_user_by_email,
     get_user_by_id,
+    generate_password_reset_pin,
+    set_password_reset_pin,
+    verify_password_reset_pin,
+    clear_password_reset_pin,
     update_user,
     delete_user,
+    update_password,
 )
+from app.services.smtp_client import send_password_reset_email
+from app.core.config import get_settings
 
 router = APIRouter(
     prefix="/auth",
@@ -212,6 +224,58 @@ async def login(
         access_token=token,
     )
     
+
+@router.post(
+    "/password-reset-request",
+    status_code=status.HTTP_200_OK,
+)
+async def password_reset_request(
+    request: PasswordResetRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    user = await get_user_by_email(session, request.email)
+
+    if user:
+        pin = generate_password_reset_pin()
+        expires_at = datetime.utcnow() + timedelta(minutes=30)
+        await set_password_reset_pin(session, user, pin, expires_at)
+        settings = get_settings()
+        reset_url = f"{settings.app_base_url}/reset-password"
+        await send_password_reset_email(user.email, pin, reset_url)
+
+    return {
+        "message": "If that email exists, password reset instructions have been sent."
+    }
+
+
+@router.post(
+    "/password-reset",
+    status_code=status.HTTP_200_OK,
+)
+async def password_reset_confirm(
+    request: PasswordResetConfirmRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    user = await get_user_by_email(session, request.email)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+
+    if not await verify_password_reset_pin(user, request.pin):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset PIN.",
+        )
+
+    await update_password(session, user, request.new_password)
+    await clear_password_reset_pin(session, user)
+    return {
+        "message": "Password updated successfully."
+    }
+
+
 @router.get(
     "/me",
     response_model=UserResponse,

@@ -611,6 +611,26 @@ button {
   color: var(--danger);
 }
 
+.badgeToggle {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+}
+
+:root[data-theme="light"] .badgeToggle {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+:root[data-theme="dark"] .badgeMatch {
+  color: #f0fdf4;
+}
+
+:root[data-theme="dark"] .badgeMismatch {
+  color: #fee2e2;
+}
+
 .reviewHeader {
   align-items: flex-start;
   border-left: 4px solid var(--primary);
@@ -1184,6 +1204,42 @@ textarea {
 .authForm input:focus {
   border-color: #2563eb;
   outline: 2px solid #dbeafe;
+}
+
+.authToggleRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.secondaryAction,
+.primaryAction {
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 600;
+  gap: 8px;
+  justify-content: center;
+  min-height: 38px;
+  padding: 9px 13px;
+}
+
+.secondaryAction {
+  background: transparent;
+  border: 1px solid #bfdbfe;
+  color: #2563eb;
+}
+
+.secondaryAction:hover {
+  background: #eff6ff;
+}
+
+.secondaryAction.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
 }
 
 .authSubmit {

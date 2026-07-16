@@ -58,6 +58,13 @@ export default function AuthPage({ onAuthenticated }) {
           <button className="primaryAction authSubmit" disabled={submitting} type="submit">
             {submitting ? "Please wait" : "Login"}
           </button>
+          <button
+            type="button"
+            className="secondaryAction"
+            onClick={() => (window.location.hash = "#/reset-password")}
+          >
+            Forgot password?
+          </button>
         </form>
       </section>
     </main>

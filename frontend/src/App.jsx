@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { accountApi, clearToken, getToken } from "./api";
 import AuthPage from "./components/AuthPage";
+import ResetPasswordPage from "./components/ResetPasswordPage";
 import Sidebar from "./components/Sidebar";
 import LogsPage from "./pages/LogsPage";
 import MailsPage from "./pages/MailsPage";
 import SettingsPage from "./pages/SettingsPage";
 import UsersPage from "./pages/UsersPage";
 
-const pages = new Set(["mails", "logs", "settings", "users"]);
+const pages = new Set(["mails", "logs", "settings", "users", "reset-password"]);
 
 function viewFromHash() {
-  const page = window.location.hash.replace("#/", "");
+  const hash = window.location.hash.replace("#/", "");
+  const page = hash.split("?")[0];
   return pages.has(page) ? page : "mails";
 }
 
@@ -65,6 +67,10 @@ export default function App() {
         handleLogout();
       });
   }, [isAuthenticated]);
+
+  if (!isAuthenticated && activeView === "reset-password") {
+    return <ResetPasswordPage />;
+  }
 
   if (!isAuthenticated) {
     return <AuthPage onAuthenticated={() => setIsAuthenticated(true)} />;

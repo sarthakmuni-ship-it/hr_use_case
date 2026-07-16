@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+import secrets
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import hash_password
@@ -84,6 +87,61 @@ async def update_user(
     await db.commit()
     await db.refresh(user)
     return user
+
+
+def generate_password_reset_pin() -> str:
+    return f"{secrets.randbelow(900000) + 100000:06d}"
+
+
+async def set_password_reset_pin(
+    db: AsyncSession,
+    user: User,
+    pin: str,
+    expires_at: datetime,
+) -> User:
+    user.password_reset_pin_hash = hash_password(pin)
+    user.password_reset_pin_expires_at = expires_at
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def verify_password_reset_pin(
+    user: User,
+    pin: str,
+) -> bool:
+    if not user.password_reset_pin_hash or not user.password_reset_pin_expires_at:
+        return False
+
+    if user.password_reset_pin_expires_at < datetime.utcnow():
+        return False
+
+    return verify_password(pin, user.password_reset_pin_hash)
+
+
+async def clear_password_reset_pin(
+    db: AsyncSession,
+    user: User,
+) -> User:
+    user.password_reset_pin_hash = None
+    user.password_reset_pin_expires_at = None
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def update_password(
+    db: AsyncSession,
+    user: User,
+    new_password: str,
+) -> User:
+    """Update a user's password hash."""
+
+    user.password_hash = hash_password(new_password)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
 
 async def delete_user(
     db: AsyncSession,

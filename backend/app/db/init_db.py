@@ -41,6 +41,8 @@ DECISION_COLUMNS = {
 
 USER_COLUMNS = {
     "role": "VARCHAR(20) NOT NULL DEFAULT 'user'",
+    "password_reset_pin_hash": "VARCHAR(255) NULL",
+    "password_reset_pin_expires_at": "DATETIME NULL",
 }
 
 

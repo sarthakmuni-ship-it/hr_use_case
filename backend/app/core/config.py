@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     app_name: str = "JADE HR Background Verification API"
     app_version: str = "1.0.0"
     app_description: str = "AI Powered JADE HR Background Verification System"
+    app_base_url: str = "http://localhost:5173"
     database_url: str = "sqlite:///app/data/hr_mailbox.sqlite3"
     employee_data_path: str = "app/data/employees.json"
     email_file_path: str = "app/data/emails.json"
@@ -60,6 +61,7 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_TOKEN_URL: str = "/api/auth/login"
     smtp_host: str = ""
     smtp_port: int = 587

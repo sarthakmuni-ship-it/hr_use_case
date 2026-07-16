@@ -31,6 +31,21 @@ def _send_smtp_message(from_addr: str, to_addr: str, subject: str, body: str) ->
     logger.info(f"[SMTP] Successfully sent outbound email to {to_addr}")
 
 
+async def send_password_reset_email(to_addr: str, pin: str, reset_url: str) -> bool:
+    subject = "Reset your password"
+    body = (
+        "Hello,\n\n"
+        "We received a request to reset your password.\n\n"
+        f"Your reset PIN is: {pin}\n\n"
+        "Enter this PIN on the reset page within 30 minutes, then choose a new password.\n\n"
+        "Reset page:\n"
+        f"{reset_url}\n\n"
+        "If you did not request this reset, please ignore this message.\n"
+    )
+
+    return await send_outbound_email(to_addr, subject, body)
+
+
 async def send_outbound_email(to_addr: str, subject: str, body: str) -> bool:
     settings = get_settings()
     if not settings.smtp_host or not settings.smtp_username:
