@@ -9,12 +9,16 @@ from app.models.auth import (
     SignupRequest,
     LoginRequest,
     TokenResponse,
+    UserUpdateRequest,
 )
 from app.services.auth_service import (
     create_user,
     authenticate_user,
     count_users,
     list_users,
+    get_user_by_id,
+    update_user,
+    delete_user,
 )
 
 router = APIRouter(
@@ -111,6 +115,78 @@ async def get_users(
         )
 
     return await list_users(session)
+
+
+@router.patch(
+    "/users/{user_id}",
+    response_model=UserResponse,
+)
+async def update_user_by_admin(
+    user_id: int,
+    request: UserUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot change your own role or status",
+        )
+
+    target_user = await get_user_by_id(session, user_id)
+
+    if target_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    return await update_user(
+        session,
+        target_user,
+        role=request.role,
+        is_active=request.is_active,
+    )
+
+
+@router.delete(
+    "/users/{user_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_user_by_admin(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot delete your own account",
+        )
+
+    target_user = await get_user_by_id(session, user_id)
+
+    if target_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    await delete_user(session, target_user)
+
+    return {"message": "User deleted successfully"}
 
 @router.post(
     "/login",

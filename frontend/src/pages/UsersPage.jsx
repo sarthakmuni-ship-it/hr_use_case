@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, ShieldCheck, UserPlus, UserRound, Users as UsersIcon } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Trash2,
+  UserPlus,
+  UserRound,
+  Users as UsersIcon,
+} from "lucide-react";
 import { usersApi } from "../api";
 
 const initialForm = {
@@ -9,7 +17,7 @@ const initialForm = {
   role: "user",
 };
 
-export default function UsersPage() {
+export default function UsersPage({ account }) {
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
@@ -17,6 +25,7 @@ export default function UsersPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rowActionId, setRowActionId] = useState(null);
 
   const adminCount = users.filter((user) => user.role === "admin").length;
 
@@ -55,6 +64,52 @@ export default function UsersPage() {
       setError(err.message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function toggleRole(user) {
+    const nextRole = user.role === "admin" ? "user" : "admin";
+    setRowActionId(user.id);
+    setError("");
+
+    try {
+      await usersApi.update(user.id, { role: nextRole });
+      await loadUsers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRowActionId(null);
+    }
+  }
+
+  async function toggleActive(user) {
+    setRowActionId(user.id);
+    setError("");
+
+    try {
+      await usersApi.update(user.id, { is_active: !user.is_active });
+      await loadUsers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRowActionId(null);
+    }
+  }
+
+  async function handleDelete(user) {
+    const confirmed = window.confirm(`Delete user "${user.full_name}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setRowActionId(user.id);
+    setError("");
+
+    try {
+      await usersApi.remove(user.id);
+      await loadUsers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRowActionId(null);
     }
   }
 
@@ -182,6 +237,7 @@ export default function UsersPage() {
         <div className="panelHeader">
           <h2>All Users</h2>
         </div>
+        {error && <div className="errorBanner">{error}</div>}
         <div className="comparisonTableWrap">
           <table className="comparisonTable">
             <thead>
@@ -190,28 +246,60 @@ export default function UsersPage() {
                 <th>Email</th>
                 <th>Role</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <UserRound size={14} style={{ marginRight: 6, verticalAlign: "text-bottom" }} />
-                    {user.full_name}
-                  </td>
-                  <td>{user.email}</td>
-                  <td>
-                    <span className={user.role === "admin" ? "badge badgeMatch" : "badge"}>
-                      {user.role === "admin" ? "Admin" : "User"}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={user.is_active ? "badge badgeMatch" : "badge badgeMismatch"}>
-                      {user.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {users.map((user) => {
+                const isSelf = user.id === account?.id;
+                const rowBusy = rowActionId === user.id;
+
+                return (
+                  <tr key={user.id}>
+                    <td>
+                      <UserRound size={14} style={{ marginRight: 6, verticalAlign: "text-bottom" }} />
+                      {user.full_name}
+                    </td>
+                    <td>{user.email}</td>
+                    <td>
+                      <button
+                        className={user.role === "admin" ? "badge badgeMatch badgeToggle" : "badge badgeToggle"}
+                        disabled={isSelf || rowBusy}
+                        onClick={() => toggleRole(user)}
+                        title={isSelf ? "You can't change your own role" : "Click to toggle role"}
+                        type="button"
+                      >
+                        {user.role === "admin" ? "Admin" : "User"}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        className={
+                          user.is_active ? "badge badgeMatch badgeToggle" : "badge badgeMismatch badgeToggle"
+                        }
+                        disabled={isSelf || rowBusy}
+                        onClick={() => toggleActive(user)}
+                        title={isSelf ? "You can't change your own status" : "Click to toggle status"}
+                        type="button"
+                      >
+                        {user.is_active ? "Active" : "Inactive"}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        aria-label="Delete user"
+                        className="iconAction danger"
+                        disabled={isSelf || rowBusy}
+                        onClick={() => handleDelete(user)}
+                        title={isSelf ? "You can't delete your own account" : "Delete user"}
+                        type="button"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

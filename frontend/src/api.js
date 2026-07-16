@@ -95,6 +95,15 @@ export const usersApi = {
       method: "POST",
       body: JSON.stringify(form),
     }),
+  update: (userId, changes) =>
+    apiRequest(`/auth/users/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify(changes),
+    }),
+  remove: (userId) =>
+    apiRequest(`/auth/users/${userId}`, {
+      method: "DELETE",
+    }),
 };
 
 export async function downloadAttachment(attachment) {

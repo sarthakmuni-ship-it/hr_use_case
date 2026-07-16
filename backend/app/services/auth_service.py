@@ -59,6 +59,41 @@ async def create_user(
     await db.refresh(user)
     return user
 
+async def get_user_by_id(
+    db: AsyncSession,
+    user_id: int,
+) -> User | None:
+    """Fetch a user by id."""
+
+    return await db.get(User, user_id)
+
+async def update_user(
+    db: AsyncSession,
+    user: User,
+    role: str | None = None,
+    is_active: bool | None = None,
+) -> User:
+    """Update a user's role and/or active status."""
+
+    if role is not None:
+        user.role = role
+
+    if is_active is not None:
+        user.is_active = is_active
+
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+async def delete_user(
+    db: AsyncSession,
+    user: User,
+) -> None:
+    """Permanently delete a user."""
+
+    await db.delete(user)
+    await db.commit()
+
 async def authenticate_user(
     db: AsyncSession,
     email: str,

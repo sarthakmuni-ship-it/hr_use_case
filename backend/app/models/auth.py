@@ -9,6 +9,11 @@ class SignupRequest(BaseModel):
     role: Literal["admin", "user"] = "user"
 
 
+class UserUpdateRequest(BaseModel):
+    role: Literal["admin", "user"] | None = None
+    is_active: bool | None = None
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
