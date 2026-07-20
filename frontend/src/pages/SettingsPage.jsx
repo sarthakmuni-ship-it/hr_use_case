@@ -1,6 +1,7 @@
 import { Moon, Sun } from "lucide-react";
+import ProfileDropdown from "../components/ProfileDropdown";
 
-export default function SettingsPage({ account, darkMode, onDarkModeChange }) {
+export default function SettingsPage({ account, onLogout, darkMode, onDarkModeChange }) {
   return (
     <section className="contentPage">
       <div className="pageTitleRow">
@@ -8,6 +9,7 @@ export default function SettingsPage({ account, darkMode, onDarkModeChange }) {
           <p className="eyebrow">Preferences</p>
           <h1>Settings</h1>
         </div>
+        <ProfileDropdown account={account} onLogout={onLogout} />
       </div>
       <div className="settingsGrid">
         <section className="panel settingsPanel">

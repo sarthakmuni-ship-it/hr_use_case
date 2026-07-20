@@ -129,7 +129,7 @@ export default function VerificationDetail({
                    {result.matches
                     ? "Match"
                      : overriddenFields.has(result.field)
-                       ? "Forced Match"
+                       ? "Verified Manually"
                       : "Mismatch"}
                  </span>
                 </div>

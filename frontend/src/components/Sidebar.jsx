@@ -1,4 +1,4 @@
-import { Inbox, ListChecks, LogOut, Settings, Users } from "lucide-react";
+import { Inbox, Layers, ListChecks, LogOut, Settings, Users } from "lucide-react";
 
 export default function Sidebar({ account, activeView, onLogout, onNavigate }) {
   // The sidebar is the only navigation surface; page content changes on the right.
@@ -11,19 +11,16 @@ export default function Sidebar({ account, activeView, onLogout, onNavigate }) {
       : []),
   ];
 
-  const initials = account?.full_name
-    ?.split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase() || "HR";
-
   return (
     <aside className="sidebar">
       <div className="sidebarLogo">
-        <span>JADE HR Agent</span>
-        <small>Background Verification</small>
+        <Layers className="logoIcon" size={22} />
+        <div>
+          <span className="logoText">JEVA</span>
+          <small className="logoTagline">Background Verification</small>
+        </div>
       </div>
+      
       <nav className="navList" aria-label="Dashboard navigation">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -41,14 +38,8 @@ export default function Sidebar({ account, activeView, onLogout, onNavigate }) {
           );
         })}
       </nav>
+
       <div className="sidebarFooter">
-        <div className="sidebarUser" title={account?.email || "Signed in"}>
-          <span className="avatar">{initials}</span>
-          <span>
-            <strong>{account?.full_name || "HR User"}</strong>
-            <small>{account?.role === "admin" ? "Administrator" : "Standard user"}</small>
-          </span>
-        </div>
         <button className="sidebarLogout" onClick={onLogout} type="button">
           <LogOut size={16} />
           Logout

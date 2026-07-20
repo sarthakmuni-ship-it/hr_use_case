@@ -9,7 +9,7 @@ def build_recommended_reply(
     subject: str,
     field_results: list[FieldMatchResult],
 ) -> SafeReplyResponse:
-    """Build a rich outbound text response with dynamic tables or fallback rejection terms."""
+    """Build a rich outbound text response with dynamic text list or fallback rejection terms."""
    
     required_match_fields = [
         result for result in field_results
@@ -18,30 +18,18 @@ def build_recommended_reply(
     all_match = all(result.matches for result in required_match_fields)
    
     if all_match:
-        # Build plain-text data structure representation
         rows = [
-            "<p>Hello,</p>",
-            "<p>Based on our background check verification rules, the details match our internal database records:</p>",
-            "<table style='border-collapse:collapse;width:100%;'>",
-            "<thead><tr><th style='border:1px solid #ccc;padding:8px;text-align:left;'>Field Name</th>"
-            "<th style='border:1px solid #ccc;padding:8px;text-align:left;'>Verified System Value</th></tr></thead>",
-            "<tbody>"
+            "Hello,\n\n",
+            "Based on our background check verification rules, the details match our internal database records:\n\n"
         ]
 
         for res in field_results:
             clean_label = res.field.replace("_", " ").title()
             system_value = str(res.workday_value) if res.workday_value is not None else "N/A"
-            rows.append(
-                "<tr>"
-                f"<td style='border:1px solid #ccc;padding:8px;'>{clean_label}</td>"
-                f"<td style='border:1px solid #ccc;padding:8px;'>{system_value}</td>"
-                "</tr>"
-            )
+            rows.append(f"{clean_label}: {system_value}\n")
 
         rows.extend([
-            "</tbody>",
-            "</table>",
-            "<p>Regards,<br/>HR Verification Team</p>"
+            "\nRegards,\nHR Verification Team"
         ])
         body = "".join(rows)
     else:
@@ -58,6 +46,3 @@ def build_recommended_reply(
         subject=f"Re: {subject}",
         body=body,
     )
-
-
-

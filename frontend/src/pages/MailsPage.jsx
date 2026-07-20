@@ -3,8 +3,11 @@ import { CheckCircle2, Clock3, Filter, Inbox, RefreshCcw, X } from "lucide-react
 import { emailsApi, getAttachmentPreview } from "../api";
 import MailList from "../components/MailList";
 import VerificationDetail from "../components/VerificationDetail";
+import ProfileDropdown from "../components/ProfileDropdown";
 
 export default function MailsPage({
+  account,
+  onLogout,
   loading,
   onError,
   onLoadingChange,
@@ -186,6 +189,7 @@ export default function MailsPage({
           >
             <RefreshCcw size={17} className={loading ? "spin" : ""} />
           </button>
+          <ProfileDropdown account={account} onLogout={onLogout} />
         </div>
       </header>
       {!selectedId && (

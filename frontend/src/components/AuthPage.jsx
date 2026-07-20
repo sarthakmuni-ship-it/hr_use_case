@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { User, Lock } from "lucide-react";
 import { login } from "../api";
 
 export default function AuthPage({ onAuthenticated }) {
@@ -31,39 +32,45 @@ export default function AuthPage({ onAuthenticated }) {
   return (
     <main className="authPage">
       <section className="authPanel">
-        <p className="eyebrow">JADE background verification</p>
-        <h1>JADE Login</h1>
+        <h1 className="authTitle">Login</h1>
         <form className="authForm" onSubmit={handleSubmit}>
-          <label>
-            Email
+          <div className="inputGroup">
             <input
               name="email"
               onChange={updateField}
               required
               type="email"
+              placeholder="Username"
               value={form.email}
             />
-          </label>
-          <label>
-            Password
+            <User className="inputIcon" size={18} />
+          </div>
+          
+          <div className="inputGroup">
             <input
               name="password"
               onChange={updateField}
               required
               type="password"
+              placeholder="Password"
               value={form.password}
             />
-          </label>
+            <Lock className="inputIcon" size={18} />
+          </div>
+
+          <div className="authFormActionRow">
+            <a
+              className="forgotPasswordLink"
+              href="#/reset-password"
+            >
+              Forgot password?
+            </a>
+          </div>
+
           {error && <div className="errorBanner">{error}</div>}
-          <button className="primaryAction authSubmit" disabled={submitting} type="submit">
+
+          <button className="authSubmitBtn" disabled={submitting} type="submit">
             {submitting ? "Please wait" : "Login"}
-          </button>
-          <button
-            type="button"
-            className="secondaryAction"
-            onClick={() => (window.location.hash = "#/reset-password")}
-          >
-            Forgot password?
           </button>
         </form>
       </section>

@@ -9,10 +9,13 @@ import {
   Search,
   UserRound,
   XCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { emailsApi, logsApi } from "../api";
 import { StatusBadge } from "../components/Badges";
 import { formatDateTime } from "../utils/date";
+import ProfileDropdown from "../components/ProfileDropdown";
 
 function formatDecision(value) {
   return value === "approve_reply" ? "Approved" : "Rejected";
@@ -22,12 +25,14 @@ function decisionBadgeClass(value) {
   return value === "approve_reply" ? "badge badgeMatch" : "badge badgeMismatch";
 }
 
-export default function LogsPage({ refreshSignal, onLoadingChange, onError }) {
+export default function LogsPage({ account, onLogout, refreshSignal, onLoadingChange, onError }) {
   const [logs, setLogs] = useState([]);
   const [selectedLog, setSelectedLog] = useState(null);
   const [verificationByEmail, setVerificationByEmail] = useState({});
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [userFilter, setUserFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 5;
 
   const normalizedUserFilter = userFilter.trim().toLowerCase();
   const filteredLogs = normalizedUserFilter
@@ -80,6 +85,15 @@ export default function LogsPage({ refreshSignal, onLoadingChange, onError }) {
     loadLogs();
   }, [refreshSignal]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [userFilter]);
+
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
+  const startIndex = (page - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredLogs.length);
+  const paginatedLogs = filteredLogs.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <section className="contentPage">
       <div className="pageTitleRow">
@@ -87,17 +101,20 @@ export default function LogsPage({ refreshSignal, onLoadingChange, onError }) {
           <p className="eyebrow">Audit trail</p>
           <h1>Logs</h1>
         </div>
-        <button
-          aria-label="Filter logs"
-          aria-pressed={filtersOpen}
-          className={filtersOpen || userFilter ? "iconAction active" : "iconAction"}
-          onClick={() => setFiltersOpen((current) => !current)}
-          title="Filter logs"
-          type="button"
-        >
-          <Filter size={17} />
-          {userFilter && <span className="filterCount">1</span>}
-        </button>
+        <div className="logToolbar">
+          <button
+            aria-label="Filter logs"
+            aria-pressed={filtersOpen}
+            className={filtersOpen || userFilter ? "iconAction active" : "iconAction"}
+            onClick={() => setFiltersOpen((current) => !current)}
+            title="Filter logs"
+            type="button"
+          >
+            <Filter size={17} />
+            {userFilter && <span className="filterCount">1</span>}
+          </button>
+          <ProfileDropdown account={account} onLogout={onLogout} />
+        </div>
       </div>
       <section className="metricGrid">
         <article className="metricCard">
@@ -171,7 +188,7 @@ export default function LogsPage({ refreshSignal, onLoadingChange, onError }) {
           <h2>Decision Logs</h2>
         </div>
         <div className="logList">
-          {filteredLogs.map((log) => {
+          {paginatedLogs.map((log) => {
             return (
               <article className="logItem" key={log.id}>
                 <button className="logSummary" onClick={() => openLog(log)} type="button">
@@ -188,6 +205,33 @@ export default function LogsPage({ refreshSignal, onLoadingChange, onError }) {
             );
           })}
         </div>
+        {filteredLogs.length > 0 && (
+          <div className="paginationRow">
+            <span className="paginationInfo">
+              Showing {startIndex + 1}–{endIndex} of {filteredLogs.length}
+            </span>
+            <div className="paginationButtons">
+              <button
+                className="paginationBtn"
+                onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                disabled={page === 1}
+                type="button"
+              >
+                <ChevronLeft size={14} />
+                Prev
+              </button>
+              <button
+                className="paginationBtn"
+                onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
+                disabled={page === totalPages}
+                type="button"
+              >
+                Next
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
         {!filteredLogs.length && (
           <p className="emptyText">
             {logs.length ? "No logs match the current filter." : "No approval or rejection logs yet."}

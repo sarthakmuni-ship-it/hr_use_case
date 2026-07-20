@@ -89,6 +89,8 @@ export default function App() {
           {error && <div className="errorBanner">{error}</div>}
           {activeView === "mails" && (
             <MailsPage
+              account={account}
+              onLogout={handleLogout}
               refreshSignal={refreshSignal}
               loading={loading}
               onRefresh={() => setRefreshSignal((current) => current + 1)}
@@ -98,6 +100,8 @@ export default function App() {
           )}
           {activeView === "logs" && (
             <LogsPage
+              account={account}
+              onLogout={handleLogout}
               refreshSignal={refreshSignal}
               onLoadingChange={setLoading}
               onError={setError}
@@ -106,12 +110,13 @@ export default function App() {
           {activeView === "settings" && (
             <SettingsPage
               account={account}
+              onLogout={handleLogout}
               darkMode={darkMode}
               onDarkModeChange={setDarkMode}
             />
           )}
           {activeView === "users" && account?.role === "admin" && (
-            <UsersPage account={account} />
+            <UsersPage account={account} onLogout={handleLogout} />
           )}
         </main>
       </div>

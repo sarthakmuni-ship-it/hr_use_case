@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { User, Lock } from "lucide-react";
 import { apiRequest } from "../api";
 
 export default function ResetPasswordPage() {
@@ -60,19 +61,18 @@ export default function ResetPasswordPage() {
   return (
     <main className="authPage">
       <section className="authPanel">
-        <p className="eyebrow">JADE background verification</p>
-        <h1>{isRequestMode ? "Reset Password" : "Enter New Password"}</h1>
+        <h1 className="authTitle">{isRequestMode ? "Reset Password" : "Enter New Password"}</h1>
 
         <div className="authToggleRow">
           <button
-            className={`secondaryAction ${isRequestMode ? "active" : ""}`}
+            className={`authToggleBtn ${isRequestMode ? "active" : ""}`}
             onClick={() => setIsRequestMode(true)}
             type="button"
           >
             Request Reset
           </button>
           <button
-            className={`secondaryAction ${!isRequestMode ? "active" : ""}`}
+            className={`authToggleBtn ${!isRequestMode ? "active" : ""}`}
             onClick={() => setIsRequestMode(false)}
             type="button"
           >
@@ -82,66 +82,74 @@ export default function ResetPasswordPage() {
 
         <form className="authForm" onSubmit={isRequestMode ? handleRequest : handleReset}>
           {isRequestMode ? (
-            <label>
-              Email
+            <div className="inputGroup">
               <input
                 name="email"
                 onChange={updateField}
                 required
                 type="email"
+                placeholder="Email"
                 value={form.email}
               />
-            </label>
+              <User className="inputIcon" size={18} />
+            </div>
           ) : (
             <>
-              <label>
-                Email
+              <div className="inputGroup">
                 <input
                   name="email"
                   onChange={updateField}
                   required
                   type="email"
+                  placeholder="Email"
                   value={form.email}
                 />
-              </label>
-              <label>
-                Reset PIN
+                <User className="inputIcon" size={18} />
+              </div>
+              <div className="inputGroup">
                 <input
                   name="pin"
                   onChange={updateField}
                   required
                   type="text"
+                  placeholder="Reset PIN"
                   value={form.pin}
                 />
-              </label>
-              <label>
-                New Password
+                <Lock className="inputIcon" size={18} />
+              </div>
+              <div className="inputGroup">
                 <input
                   name="new_password"
                   onChange={updateField}
                   required
                   type="password"
+                  placeholder="New Password"
                   value={form.new_password}
                 />
-              </label>
+                <Lock className="inputIcon" size={18} />
+              </div>
             </>
           )}
 
           {error && <div className="errorBanner">{error}</div>}
           {message && <div className="successBanner">{message}</div>}
 
-          <button className="primaryAction authSubmit" disabled={submitting} type="submit">
+          <button className="authSubmitBtn" disabled={submitting} type="submit">
             {submitting ? "Please wait" : isRequestMode ? "Send Reset Email" : "Reset Password"}
           </button>
-          {!isRequestMode && message && !error && (
-            <button
-              className="secondaryAction authSubmit"
-              type="button"
-              onClick={() => (window.location.hash = "#/ ".trim())}
+
+          <div className="authFormActionRow" style={{ marginTop: "10px", justifyContent: "center" }}>
+            <a
+              href="#/ "
+              className="forgotPasswordLink"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.hash = "#/";
+              }}
             >
               Back to Login
-            </button>
-          )}
+            </a>
+          </div>
         </form>
       </section>
     </main>
