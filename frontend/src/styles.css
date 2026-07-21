@@ -911,6 +911,10 @@ tbody tr:hover {
   gap: 12px;
   justify-content: space-between;
   padding-bottom: 12px;
+  position: sticky;      
+  top: 0;               
+  background: var(--bg-card);  
+  z-index: 2;             
 }
 
 .logModalHeader > div {
@@ -1767,6 +1771,20 @@ textarea {
 
 .userFormGrid .fullSpan {
   grid-column: 1 / -1;
+}
+
+.fieldLabel {
+  color: var(--text-main);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.sourceToggleGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .passwordField {

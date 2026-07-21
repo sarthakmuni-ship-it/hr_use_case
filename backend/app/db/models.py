@@ -97,6 +97,60 @@ class VerificationDecision(Base):
         server_default=func.now(),
     )
 
+
+class DocumentVerificationSubmission(Base):
+    """Candidate document verification submission uploaded by HR."""
+
+    __tablename__ = "document_verification_submissions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    candidate_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="PROCESSING",
+    )
+    pipeline_status_raw: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    issues_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pending_documents_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extracted_documents_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    submitted_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    processing_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+
+class DocumentVerificationFile(Base):
+    """Uploaded file saved for a document verification submission."""
+
+    __tablename__ = "document_verification_files"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    submission_id: Mapped[int] = mapped_column(
+        ForeignKey("document_verification_submissions.id"),
+        nullable=False,
+    )
+    filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    stored_filename: Mapped[str] = mapped_column(String(700), nullable=False)
+    content_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    file_path: Mapped[str] = mapped_column(String(1000), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=func.now(),
+    )
+
 class User(Base):
     """Application user."""
 

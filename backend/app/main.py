@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.auth import router as auth_router
+from app.api.doc_verification import router as doc_verification_router
 from app.api.routes import router
 from app.core.config import get_settings
 from app.db.init_db import initialize_database
@@ -142,6 +143,7 @@ def create_app() -> FastAPI:
     )
 
     application.include_router(router)
+    application.include_router(doc_verification_router)
     application.include_router(
         auth_router,
         prefix="/api",

@@ -68,6 +68,16 @@ class Settings(BaseSettings):
     smtp_username: str = ""
     smtp_password: str = ""
     smtp_use_tls: bool = True
+    doc_verification_upload_dir: str = "app/data/doc_verification_uploads"
+    doc_verification_max_files: int = 25
+    doc_verification_max_file_size_mb: int = 25
+    azure_openai_endpoint: str = ""
+    azure_openai_api_key: str = ""
+    azure_openai_api_version: str = "2024-08-01-preview"
+    azure_openai_deployment: str = "ilabs-gpt-5-mini"
+    doc_verification_pipeline_concurrency: int = 4
+    google_drive_service_account_file: str = ""
+    google_drive_service_account_json: str = ""
 
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
@@ -88,4 +98,3 @@ def get_settings() -> Settings:
 
 
     return Settings()
-

@@ -88,6 +88,49 @@ export const accountApi = {
   me: () => apiRequest("/auth/me"),
 };
 
+export const docVerificationApi = {
+  list: () => apiRequest("/doc-verification/submissions"),
+  detail: (submissionId) => apiRequest(`/doc-verification/submissions/${submissionId}`),
+  submit: async (candidateName, files) => {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append("candidate_name", candidateName);
+    files.forEach((file) => formData.append("files", file));
+
+    const response = await fetch(`${API_BASE_URL}/doc-verification/submit`, {
+      method: "POST",
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || "Submission failed");
+    }
+    return data;
+  },
+  submitDrive: (candidateName, driveUrl) =>
+    apiRequest("/doc-verification/drive-submit", {
+      method: "POST",
+      body: JSON.stringify({ candidate_name: candidateName, drive_url: driveUrl }),
+    }),
+  fileUrl: (submissionId, filename) =>
+    `/doc-verification/submissions/${submissionId}/files/${encodeURIComponent(filename)}`,
+};
+
+export async function fetchAuthedFile(relativePath) {
+  const response = await fetch(`${API_BASE_URL}${relativePath}`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+  if (!response.ok) {
+    throw new Error("File fetch failed");
+  }
+  const blob = await response.blob();
+  return { url: URL.createObjectURL(blob), contentType: blob.type };
+}
+
 export const usersApi = {
   list: () => apiRequest("/auth/users"),
   create: (form) =>

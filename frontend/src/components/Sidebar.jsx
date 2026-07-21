@@ -1,9 +1,10 @@
-import { Inbox, Layers, ListChecks, LogOut, Settings, Users } from "lucide-react";
+import { FileCheck2, Inbox, Layers, ListChecks, LogOut, Settings, Users } from "lucide-react";
 
 export default function Sidebar({ account, activeView, onLogout, onNavigate }) {
   // The sidebar is the only navigation surface; page content changes on the right.
   const navItems = [
     { id: "mails", label: "Inbox", icon: Inbox },
+    { id: "verification", label: "Document Verification", icon: FileCheck2 },
     { id: "settings", label: "Settings", icon: Settings },
     { id: "logs", label: "Logs", icon: ListChecks },
     ...(account?.role === "admin"

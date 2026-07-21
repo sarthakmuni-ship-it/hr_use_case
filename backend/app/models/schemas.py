@@ -152,3 +152,55 @@ class LlmTestResponse(BaseModel):
     model: str
     success: bool
     message: str
+
+
+class DocumentVerificationFileResponse(BaseModel):
+    """Uploaded document metadata shown in the document verification UI."""
+
+    id: int
+    filename: str
+    content_type: str | None = None
+    size_bytes: int
+    url: str
+
+
+class DocumentVerificationSubmissionSummary(BaseModel):
+    """Candidate-level document verification row shown in the dashboard."""
+
+    id: int
+    candidate_name: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    verdict_summary: str | None = None
+    summary: str | None = None
+    issue_count: int = 0
+
+
+class DocumentVerificationSubmissionDetail(BaseModel):
+    """Full document verification result for one candidate submission."""
+
+    id: int
+    candidate_name: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    summary: str | None = None
+    issues: list[str] = []
+    pending_documents: list[str] = []
+    extracted_documents: list[dict] = []
+    files: list[DocumentVerificationFileResponse] = []
+
+
+class DocumentVerificationSubmitResponse(BaseModel):
+    """Response returned after HR uploads documents for processing."""
+
+    message: str
+    submission_id: int
+
+
+class DocumentVerificationDriveSubmitRequest(BaseModel):
+    """Request to import candidate documents from a Google Drive file or folder."""
+
+    candidate_name: str
+    drive_url: str

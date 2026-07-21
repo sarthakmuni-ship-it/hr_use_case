@@ -1,9 +1,10 @@
 import re
+import logging
 from datetime import date, datetime
 
 from app.models.schemas import ClaimedEmployeeDetails
 
-
+logger = logging.getLogger(__name__)
 DATE_PATTERNS = (
     "%Y-%m-%d",
     "%d-%m-%Y",
@@ -47,9 +48,11 @@ def _parse_date(value: str | None) -> date | None:
 
 
 def parse_verification_email(body: str) -> ClaimedEmployeeDetails:
+    logger.debug("[PROCESS] Parsing verification email body_chars=%s", len(body))
     print("========== EMAIL BODY ==========")
     print(repr(body))
     print("================================")
+    
     
     body = re.sub(r"[*_`]", "", body)
     
@@ -62,10 +65,13 @@ def parse_verification_email(body: str) -> ClaimedEmployeeDetails:
     location = _extract_line_value(body, ["Location", "Base Location", "Work Location"])
     exit_formalities_completed = _extract_line_value(body, ["Exit Formalities", "Exit Formalities Completed", "Clearance"])
 
-    print("Candidate Name:", repr(candidate_name))
-    print("Employee ID:", repr(employee_id))
-    print("Start Date:", repr(start_date))
-    print("End Date:", repr(end_date))
+    logger.debug(
+        "[PROCESS] Parsed fallback fields candidate_name=%r employee_id=%r start_date=%r end_date=%r",
+        candidate_name,
+        employee_id,
+        start_date,
+        end_date,
+    )
 
     return ClaimedEmployeeDetails(
         candidate_name=candidate_name,

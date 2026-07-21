@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { accountApi, clearToken, getToken } from "./api";
 import AuthPage from "./components/AuthPage";
 import ResetPasswordPage from "./components/ResetPasswordPage";
+import DocVerificationPage from "./pages/DocVerificationPage";
 import Sidebar from "./components/Sidebar";
 import LogsPage from "./pages/LogsPage";
 import MailsPage from "./pages/MailsPage";
 import SettingsPage from "./pages/SettingsPage";
 import UsersPage from "./pages/UsersPage";
 
-const pages = new Set(["mails", "logs", "settings", "users", "reset-password"]);
+const pages = new Set(["mails", "verification", "logs", "settings", "users", "reset-password"]);
 
 function viewFromHash() {
   const hash = window.location.hash.replace("#/", "");
@@ -98,6 +99,13 @@ export default function App() {
               onError={setError}
             />
           )}
+
+          {activeView === "verification" && (
+            <DocVerificationPage account={account} onLogout={handleLogout} onError={setError} 
+            />
+          )}
+
+
           {activeView === "logs" && (
             <LogsPage
               account={account}
