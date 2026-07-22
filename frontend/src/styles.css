@@ -904,6 +904,11 @@ tbody tr:hover {
   width: min(1180px, 96vw);
 }
 
+.verificationModalPanel {
+  max-width: 1380px;
+  width: min(1380px, 98vw);
+}
+
 .logModalHeader {
   align-items: flex-start;
   border-bottom: 1px solid var(--border);
@@ -955,6 +960,293 @@ tbody tr:hover {
 .modalSectionHeader h3 {
   font-size: 15px;
   margin: 0;
+}
+
+.compactReviewList {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compactReviewList .modalSectionHeader {
+  flex: 0 0 100%;
+}
+
+.reviewNoteChip {
+  background: var(--danger-bg);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 999px;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  max-width: 100%;
+  padding: 6px 10px;
+  overflow-wrap: anywhere;
+}
+
+.verificationWorkspace {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1fr);
+  min-height: 560px;
+}
+
+.documentGridPane,
+.documentPreviewPanel,
+.modelFieldsPanel {
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.documentGridPane {
+  align-content: start;
+  display: grid;
+  gap: 12px;
+}
+
+.documentMiniGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  max-height: 680px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.documentMiniCard {
+  align-items: stretch;
+  background: var(--bg-row);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-main);
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  min-height: 214px;
+  padding: 9px;
+  text-align: left;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.documentMiniCard:hover,
+.documentMiniCard.selected {
+  border-color: var(--primary);
+  box-shadow: 0 10px 22px rgba(2, 6, 23, 0.18);
+  transform: translateY(-1px);
+}
+
+.documentMiniCard.selected {
+  outline: 2px solid var(--primary-soft);
+}
+
+.docThumbWrap {
+  align-items: center;
+  aspect-ratio: 4 / 3;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.docThumbWrap img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.docThumbFallback {
+  align-items: center;
+  color: var(--text-muted);
+  display: inline-flex;
+  justify-content: center;
+}
+
+.documentMiniTitle,
+.documentMiniMeta {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.documentMiniTitle {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.documentMiniMeta {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.documentReviewPane {
+  display: grid;
+  gap: 14px;
+  grid-template-rows: minmax(380px, 1fr) auto;
+  min-width: 0;
+}
+
+.documentPreviewPanel {
+  display: grid;
+  gap: 10px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.documentPreviewHeader {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.documentPreviewHeader > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.documentPreviewHeader strong,
+.documentPreviewHeader span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.documentPreviewHeader span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.verificationPreviewSurface {
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  min-height: 360px;
+  overflow: hidden;
+}
+
+.verificationPreviewImage,
+.verificationPreviewFrame {
+  border: 0;
+  height: 100%;
+  max-height: 560px;
+  min-height: 360px;
+  width: 100%;
+}
+
+.verificationPreviewImage {
+  object-fit: contain;
+}
+
+.documentPreviewEmpty {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  font-size: 13px;
+  justify-content: center;
+  min-height: 360px;
+  padding: 24px;
+  text-align: center;
+  width: 100%;
+}
+
+.modelFieldsPanel {
+  align-content: start;
+  display: grid;
+  gap: 10px;
+}
+
+.fieldResultGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.fieldResultCard,
+.fieldStatusRow {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 10px;
+}
+
+.fieldResultCard > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fieldResultCard span:first-child {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.fieldResultCard strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.fieldResultBadge {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 5px;
+  padding: 5px 8px;
+}
+
+.fieldMatch {
+  background: rgba(22, 163, 74, 0.12);
+  border-color: rgba(22, 163, 74, 0.45);
+}
+
+.fieldMatch .fieldResultBadge {
+  background: var(--success-bg);
+  color: #86efac;
+}
+
+:root[data-theme="light"] .fieldMatch .fieldResultBadge {
+  color: #166534;
+}
+
+.fieldMismatch {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
+.fieldMismatch .fieldResultBadge {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.fieldStatusRow {
+  color: var(--danger);
+  font-size: 13px;
+  justify-content: flex-start;
 }
 
 .sentReplyBox {
@@ -1676,6 +1968,18 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .verificationWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .documentReviewPane {
+    grid-template-rows: auto auto;
+  }
+
+  .documentMiniGrid {
+    max-height: none;
+  }
+
   .filterControls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2087,4 +2391,17 @@ textarea {
 
 .profileDropdownLogout:hover {
   background: var(--danger-bg);
+}
+
+.unevenColumns {
+  display: grid;
+  gap: 14px;
+  /* Reminders takes ~35% width, Candidates takes ~65% width */
+  grid-template-columns: 0.7fr 1.3fr; 
+}
+
+@media (max-width: 960px) {
+  .unevenColumns {
+    grid-template-columns: 1fr; /* Stack on mobile[cite: 1] */
+  }
 }

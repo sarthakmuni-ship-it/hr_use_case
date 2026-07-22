@@ -202,5 +202,5 @@ class DocumentVerificationSubmitResponse(BaseModel):
 class DocumentVerificationDriveSubmitRequest(BaseModel):
     """Request to import candidate documents from a Google Drive file or folder."""
 
-    candidate_name: str
+    candidate_name: str | None = None
     drive_url: str

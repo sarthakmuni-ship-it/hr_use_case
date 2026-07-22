@@ -31,6 +31,20 @@ def _public_extractions(documents: list[dict]) -> list[dict]:
     return public_documents
 
 
+def _first_extracted_candidate_name(documents: list[dict]) -> str | None:
+    for document in documents:
+        if not isinstance(document, dict):
+            continue
+        extracted = document.get("extracted_data") or {}
+        if not isinstance(extracted, dict):
+            continue
+        for field_name in ("candidate_name", "name"):
+            value = extracted.get(field_name)
+            if value and str(value).strip():
+                return str(value).strip()
+    return None
+
+
 class DocumentVerificationRepository:
     """Database access for document verification submissions and files."""
 
@@ -109,21 +123,24 @@ class DocumentVerificationRepository:
         pipeline_status = result.get("status")
         final_status = "VERIFIED" if pipeline_status == "VERIFIED" else "NEEDS_HUMAN_REVIEW"
         rule_report = result.get("detailed_reports", {}).get("step3_rule_engine", {})
+        extracted_documents = result.get("document_extractions", [])
+        candidate_name = _first_extracted_candidate_name(extracted_documents)
+        values = {
+            "status": final_status,
+            "pipeline_status_raw": pipeline_status,
+            "summary": result.get("summary"),
+            "issues_json": json.dumps(result.get("action_items", [])),
+            "pending_documents_json": json.dumps(rule_report.get("pending_documents", [])),
+            "extracted_documents_json": json.dumps(_public_extractions(extracted_documents)),
+            "processing_error": None,
+            "updated_at": datetime.utcnow(),
+        }
+        if candidate_name:
+            values["candidate_name"] = candidate_name
         await self.session.execute(
             update(DocumentVerificationSubmission)
             .where(DocumentVerificationSubmission.id == submission_id)
-            .values(
-                status=final_status,
-                pipeline_status_raw=pipeline_status,
-                summary=result.get("summary"),
-                issues_json=json.dumps(result.get("action_items", [])),
-                pending_documents_json=json.dumps(rule_report.get("pending_documents", [])),
-                extracted_documents_json=json.dumps(
-                    _public_extractions(result.get("document_extractions", []))
-                ),
-                processing_error=None,
-                updated_at=datetime.utcnow(),
-            )
+            .values(**values)
         )
 
     async def mark_failed(self, submission_id: int, error: str) -> None:

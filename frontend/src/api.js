@@ -91,10 +91,9 @@ export const accountApi = {
 export const docVerificationApi = {
   list: () => apiRequest("/doc-verification/submissions"),
   detail: (submissionId) => apiRequest(`/doc-verification/submissions/${submissionId}`),
-  submit: async (candidateName, files) => {
+  submit: async (files) => {
     const token = getToken();
     const formData = new FormData();
-    formData.append("candidate_name", candidateName);
     files.forEach((file) => formData.append("files", file));
 
     const response = await fetch(`${API_BASE_URL}/doc-verification/submit`, {
@@ -111,10 +110,10 @@ export const docVerificationApi = {
     }
     return data;
   },
-  submitDrive: (candidateName, driveUrl) =>
+  submitDrive: (driveUrl) =>
     apiRequest("/doc-verification/drive-submit", {
       method: "POST",
-      body: JSON.stringify({ candidate_name: candidateName, drive_url: driveUrl }),
+      body: JSON.stringify({ drive_url: driveUrl }),
     }),
   fileUrl: (submissionId, filename) =>
     `/doc-verification/submissions/${submissionId}/files/${encodeURIComponent(filename)}`,

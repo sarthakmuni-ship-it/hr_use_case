@@ -27,7 +27,6 @@ export default function DocVerificationPage({ account, onLogout, onError }) {
   const [page, setPage] = useState(1);
 
   const [showForm, setShowForm] = useState(false);
-  const [candidateName, setCandidateName] = useState("");
   const [files, setFiles] = useState([]);
   const [sourceMode, setSourceMode] = useState("local");
   const [driveUrl, setDriveUrl] = useState("");
@@ -105,12 +104,11 @@ export default function DocVerificationPage({ account, onLogout, onError }) {
     setSubmitting(true);
     try {
       if (sourceMode === "drive") {
-        await docVerificationApi.submitDrive(candidateName, driveUrl.trim());
+        await docVerificationApi.submitDrive(driveUrl.trim());
       } else {
-        await docVerificationApi.submit(candidateName, files);
+        await docVerificationApi.submit(files);
       }
       setFiles([]);
-      setCandidateName("");
       setDriveUrl("");
       setFileError("");
       setShowForm(false);
@@ -137,7 +135,8 @@ export default function DocVerificationPage({ account, onLogout, onError }) {
         <ProfileDropdown account={account} onLogout={onLogout} />
       </div>
 
-      <section className="metricGrid">
+      {/* Added inline style to force 4 columns in one line */}
+      <section className="metricGrid" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
         <article className="metricCard">
           <span className="metricIcon"><FileStack size={18} /></span>
           <div><small>Total Candidates</small><strong>{submissions.length}</strong></div>
@@ -163,17 +162,6 @@ export default function DocVerificationPage({ account, onLogout, onError }) {
           </div>
           <form className="authForm" onSubmit={handleSubmit}>
             <div className="userFormGrid">
-              <label className="fullSpan">
-                Candidate name
-                <input
-                  onChange={(e) => setCandidateName(e.target.value)}
-                  placeholder="e.g. Rahul Sharma"
-                  required
-                  type="text"
-                  value={candidateName}
-                />
-              </label>
-
               <div className="fullSpan">
                 <span className="fieldLabel">Document source</span>
                 <div className="sourceToggleGroup">

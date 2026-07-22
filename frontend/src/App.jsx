@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { accountApi, clearToken, getToken } from "./api";
 import AuthPage from "./components/AuthPage";
 import ResetPasswordPage from "./components/ResetPasswordPage";
+import DashboardPage from "./pages/DashboardPage";
 import DocVerificationPage from "./pages/DocVerificationPage";
 import Sidebar from "./components/Sidebar";
 import LogsPage from "./pages/LogsPage";
@@ -9,12 +10,12 @@ import MailsPage from "./pages/MailsPage";
 import SettingsPage from "./pages/SettingsPage";
 import UsersPage from "./pages/UsersPage";
 
-const pages = new Set(["mails", "verification", "logs", "settings", "users", "reset-password"]);
+const pages = new Set(["dashboard", "mails", "verification", "logs", "settings", "users", "reset-password"]);
 
 function viewFromHash() {
   const hash = window.location.hash.replace("#/", "");
   const page = hash.split("?")[0];
-  return pages.has(page) ? page : "mails";
+  return pages.has(page) ? page : "dashboard";
 }
 
 export default function App() {
@@ -32,7 +33,7 @@ export default function App() {
     clearToken();
     setIsAuthenticated(false);
     setAccount(null);
-    window.location.hash = "#/mails";
+    window.location.hash = "#/dashboard";
   }
 
   function navigateTo(view) {
@@ -50,7 +51,7 @@ export default function App() {
     }
 
     if (!window.location.hash) {
-      window.location.hash = "#/mails";
+      window.location.hash = "#/dashboard";
     }
     window.addEventListener("hashchange", syncViewFromHash);
     syncViewFromHash();
@@ -88,6 +89,15 @@ export default function App() {
       <div className="contentShell">
         <main className="pageContent">
           {error && <div className="errorBanner">{error}</div>}
+          {activeView === "dashboard" && (
+            <DashboardPage
+              account={account}
+              onLogout={handleLogout}
+              onNavigate={navigateTo}
+              onError={setError}
+            />
+          )}
+
           {activeView === "mails" && (
             <MailsPage
               account={account}

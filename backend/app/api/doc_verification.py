@@ -62,7 +62,7 @@ async def list_submissions(
 )
 async def submit_documents(
     background_tasks: BackgroundTasks,
-    candidate_name: str = Form(...),
+    candidate_name: str = Form(default=""),
     files: list[UploadFile] = File(...),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),

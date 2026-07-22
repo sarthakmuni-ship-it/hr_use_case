@@ -25,6 +25,7 @@ VALID_DOC_TYPES = [
     "PF_FORM_11",
     "SELF_DECLARATION_FORM",
     "SIGNED_OFFER_LETTER_JADE",
+    "PASSPORT_PHOTO",
     "GAP_DECLARATION_FORM",
     "GAP_AFFIDAVIT",
     "CANCELLED_CHEQUE",
@@ -44,7 +45,8 @@ RULES:
 2. Pick the single best matching type.
 3. SIGNED_OFFER_LETTER_JADE = any offer letter issued by Jade Global.
 4. OFFER_LETTER_PREVIOUS_ORG = an offer letter from any other company.
-5. If nothing matches confidently, return UNKNOWN.
+5. PASSPORT_PHOTO = a professional candidate photograph/headshot for company identification.
+6. If nothing matches confidently, return UNKNOWN.
 
 OUTPUT FORMAT:
 {{"document_type": "TYPE_FROM_LIST", "confidence_score": 0.9}}

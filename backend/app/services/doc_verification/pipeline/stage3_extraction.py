@@ -31,6 +31,8 @@ BOOLEAN_FIELDS = {
     "is_signed",
     "is_handwritten",
     "has_watermark_or_stamp",
+    "has_plain_background",
+    "is_professional_photo",
 }
 LIST_FIELDS = {"employers", "months_provided"}
 DATE_FORMATS_TO_TRY = [
@@ -50,6 +52,7 @@ DOC_TYPE_FIELDS: dict[str, list[str]] = {
     "AADHAAR_CARD": ["name", "dob", "aadhaar_number"],
     "SELF_DECLARATION_FORM": [
         "candidate_name",
+        "dob",
         "doj",
         "is_signed (boolean)",
         "is_handwritten (boolean)",
@@ -91,6 +94,7 @@ DOC_TYPE_FIELDS: dict[str, list[str]] = {
         "is_ctc_signed (boolean)",
         "is_bonus_signed (boolean)",
     ],
+    "PASSPORT_PHOTO": ["has_plain_background (boolean)", "is_professional_photo (boolean)"],
     "GAP_DECLARATION_FORM": ["gap_start_date", "gap_end_date", "reason_for_gap"],
     "GAP_AFFIDAVIT": [
         "gap_start_date",

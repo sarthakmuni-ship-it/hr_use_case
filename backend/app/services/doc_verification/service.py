@@ -23,6 +23,7 @@ from app.services.doc_verification.storage import DocumentStorageService
 
 
 logger = logging.getLogger(__name__)
+UNKNOWN_CANDIDATE_LABEL = "Analyzing documents"
 
 
 class DocumentVerificationService:
@@ -42,6 +43,7 @@ class DocumentVerificationService:
         uploads: list[UploadFile],
         current_user: User,
     ) -> int:
+        candidate_name = candidate_name.strip() or UNKNOWN_CANDIDATE_LABEL
         logger.info(
             "[DOC_VERIFY] Creating local document submission candidate=%r user_id=%s upload_count=%s",
             candidate_name,
@@ -63,10 +65,11 @@ class DocumentVerificationService:
 
     async def submit_from_google_drive(
         self,
-        candidate_name: str,
+        candidate_name: str | None,
         drive_url: str,
         current_user: User,
     ) -> int:
+        candidate_name = (candidate_name or "").strip() or UNKNOWN_CANDIDATE_LABEL
         logger.info(
             "[DOC_VERIFY] Creating Google Drive document submission candidate=%r user_id=%s",
             candidate_name,

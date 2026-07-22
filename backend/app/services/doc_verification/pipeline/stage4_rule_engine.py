@@ -6,12 +6,12 @@ from typing import Any
 MANDATORY_DOC_TYPES = {
     "PAN_CARD",
     "AADHAAR_CARD",
-    "MARKSHEET",
     "RESUME",
     "SELF_DECLARATION_FORM",
     "PF_FORM_11",
     "CANCELLED_CHEQUE",
     "SIGNED_OFFER_LETTER_JADE",
+    "PASSPORT_PHOTO",
 }
 
 
@@ -179,6 +179,8 @@ def evaluate_dossier(
     uploaded_types = set(dossier.keys())
 
     missing_docs = MANDATORY_DOC_TYPES - uploaded_types
+    if not ({"MARKSHEET", "DEGREE_CERTIFICATE"} & uploaded_types):
+        missing_docs.add("MARKSHEET_OR_DEGREE_CERTIFICATE")
     if missing_docs:
         issues.append(f"Missing mandatory documents: {', '.join(sorted(missing_docs))}")
 
@@ -199,6 +201,15 @@ def evaluate_dossier(
     self_dec = _unwrap_doc(dossier, "SELF_DECLARATION_FORM")
     if self_dec and self_dec.get("is_signed") is False:
         issues.append("Self Declaration Form appears unsigned.")
+    if self_dec and self_dec.get("is_handwritten") is False:
+        issues.append("Self Declaration Form must be manually handwritten, not digitally filled.")
+
+    photo = _unwrap_doc(dossier, "PASSPORT_PHOTO")
+    if photo:
+        if photo.get("has_plain_background") is False:
+            issues.append("Passport photo must have a plain white background.")
+        if photo.get("is_professional_photo") is False:
+            issues.append("Passport photo must be a professional candidate photograph.")
 
     jade_offer = _unwrap_doc(dossier, "SIGNED_OFFER_LETTER_JADE")
     if jade_offer and (not jade_offer.get("grade") or not jade_offer.get("location")):
@@ -222,13 +233,20 @@ def evaluate_dossier(
     elif candidate_profile.get("is_fresher") is True:
         is_fresher = True
 
-    if pf_form and pf_form.get("total_points_filled") is not None:
-        required_points = 10 if is_fresher else 12
-        if pf_form["total_points_filled"] < required_points:
-            candidate_type = "Fresher" if is_fresher else "Lateral"
+    if pf_form:
+        if pf_form.get("is_handwritten") is False:
+            issues.append("PF Form 11 must be manually handwritten, not digitally filled.")
+        if pf_form.get("total_points_filled") is not None:
+            required_points = 11
+            if pf_form["total_points_filled"] < required_points:
+                candidate_type = "Fresher" if is_fresher else "Lateral"
+                issues.append(
+                    f"PF Form 11 Incomplete: {candidate_type} candidate requires "
+                    f"all {required_points} points filled, but found {pf_form['total_points_filled']}."
+                )
+        else:
             issues.append(
-                f"PF Form 11 Incomplete: {candidate_type} candidate requires "
-                f"{required_points} points filled, but found {pf_form['total_points_filled']}."
+                "PF Form 11 completeness could not be verified because filled point count was not extracted."
             )
 
     resignation = _unwrap_doc(dossier, "RESIGNATION_ACCEPTANCE")
