@@ -118,9 +118,9 @@ button {
 
 .logoText {
   color: var(--text-main);
-  font-size: 26px;
+  font-size: 21px;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
   display: block;
   line-height: 1.1;
   background: linear-gradient(135deg, var(--primary), #a855f7);
@@ -960,30 +960,6 @@ tbody tr:hover {
 .modalSectionHeader h3 {
   font-size: 15px;
   margin: 0;
-}
-
-.compactReviewList {
-  align-items: flex-start;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.compactReviewList .modalSectionHeader {
-  flex: 0 0 100%;
-}
-
-.reviewNoteChip {
-  background: var(--danger-bg);
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  border-radius: 999px;
-  color: var(--danger);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.4;
-  max-width: 100%;
-  padding: 6px 10px;
-  overflow-wrap: anywhere;
 }
 
 .verificationWorkspace {
@@ -2068,7 +2044,22 @@ textarea {
   transition: border-color 0.2s, outline 0.2s;
 }
 
+.userFormGrid select {
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-main);
+  min-height: 42px;
+  padding: 10px 12px;
+  width: 100%;
+}
+
 .userFormGrid input:focus {
+  border-color: var(--primary);
+  outline: 2px solid var(--primary-soft);
+}
+
+.userFormGrid select:focus {
   border-color: var(--primary);
   outline: 2px solid var(--primary-soft);
 }
@@ -2157,6 +2148,28 @@ textarea {
   color: var(--text-muted);
   font-size: 12px;
   line-height: 1.4;
+}
+
+.tableActionGroup {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.iconAction.danger {
+  color: var(--danger);
+}
+
+.iconAction.danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+
+.userEditModalPanel {
+  max-width: 460px;
+}
+
+.singleColumnForm {
+  grid-template-columns: 1fr;
 }
 
 :root[data-theme="light"] .roleCard {
@@ -2393,15 +2406,344 @@ textarea {
   background: var(--danger-bg);
 }
 
-.unevenColumns {
+/* Application-wide polish for the verification workspace */
+:root {
+  --card-shadow: 0 12px 28px rgba(2, 6, 23, 0.18);
+  --card-shadow-light: 0 10px 26px rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="light"] {
+  --bg-app: #f6f8fb;
+  --bg-card: #ffffff;
+  --bg-muted: #f8fafc;
+  --bg-sidebar: #ffffff;
+  --bg-row: #ffffff;
+  --border: #e6eaf0;
+  --primary-soft: #eef2ff;
+  --success-bg: #dcfce7;
+  --warning-bg: #fff7ed;
+  --danger-bg: #fee2e2;
+}
+
+:root[data-theme="dark"] {
+  --bg-app: #0f172a;
+  --bg-card: #172033;
+  --bg-muted: #111827;
+  --bg-row: #1d2a44;
+  --border: #334155;
+}
+
+.pageContent {
+  background: var(--bg-app);
+}
+
+.panel,
+.reviewHeader,
+.metricCard,
+.logModalPanel {
+  box-shadow: var(--card-shadow);
+}
+
+:root[data-theme="light"] .panel,
+:root[data-theme="light"] .reviewHeader,
+:root[data-theme="light"] .metricCard,
+:root[data-theme="light"] .logModalPanel {
+  box-shadow: var(--card-shadow-light);
+}
+
+.panelHeader h2,
+.panel h2,
+.reviewHeader h2 {
+  font-size: 16px;
+  font-weight: 750;
+  letter-spacing: 0;
+}
+
+.reviewHeader h2 {
+  font-size: 20px;
+}
+
+.metricGridFour {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.metricCard {
+  align-items: center;
+  background: var(--bg-card);
+  border-color: var(--border);
+  gap: 14px;
+  min-height: 96px;
+  padding: 16px;
+}
+
+.metricCard small {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.25;
+  text-transform: none;
+}
+
+.metricCard strong {
+  font-size: 28px;
+  font-weight: 800;
+  margin-top: 6px;
+}
+
+.metricCard em {
+  color: var(--text-muted);
+  display: block;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.metricIcon {
+  border: 0;
+  border-radius: 8px;
+  height: 44px;
+  width: 44px;
+}
+
+:root[data-theme="light"] .metricIcon {
+  color: #2563eb;
+}
+
+:root[data-theme="light"] .metricIcon.success {
+  color: #16a34a;
+}
+
+:root[data-theme="light"] .metricIcon.warning {
+  color: #f59e0b;
+}
+
+:root[data-theme="light"] .metricIcon.danger {
+  color: #dc2626;
+}
+
+.toolGraphGrid {
   display: grid;
   gap: 14px;
-  /* Reminders takes ~35% width, Candidates takes ~65% width */
-  grid-template-columns: 0.7fr 1.3fr; 
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 2px;
+}
+
+.toolGraphCard {
+  display: grid;
+  gap: 16px;
+  min-height: 220px;
+}
+
+.compactHeader {
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.toolGraphItem {
+  display: grid;
+  gap: 8px;
+}
+
+.toolGraphLabel {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.toolGraphLabel span {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.toolGraphLabel strong {
+  font-size: 20px;
+}
+
+.toolGraphTrack {
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.toolGraphFill {
+  display: block;
+  height: 100%;
+  min-width: 6px;
+}
+
+.toolGraphFill.new {
+  background: var(--primary);
+}
+
+.toolGraphFill.pending {
+  background: var(--warning);
+}
+
+.toolGraphFill.verified {
+  background: var(--success);
+}
+
+.toolGraphFooter {
+  align-items: baseline;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.toolGraphFooter strong {
+  font-size: 26px;
+}
+
+.toolGraphFooter span {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.emailRow {
+  grid-template-columns: minmax(240px, 1.3fr) minmax(220px, 0.95fr) minmax(210px, auto);
+}
+
+.emailSender {
+  color: var(--text-muted);
+  display: block;
+  font-size: 13px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emailFooter {
+  min-width: 210px;
+}
+
+.fieldHint {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.fieldHint.error {
+  color: var(--danger);
+}
+
+.filterControls select,
+.filterControls input,
+.logFilterControls input,
+.logFilterControls select {
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-main);
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.historyToggleGroup {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 4px;
+  justify-self: start;
+  padding: 4px;
+}
+
+.historyToggle {
+  align-items: center;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 12px;
+}
+
+.historyToggle.active {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.documentHistoryFilters {
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.7fr) auto;
+}
+
+.reviewNotesPanel {
+  border-left: 4px solid var(--warning);
+}
+
+.reviewNotesList {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.reviewNoteItem {
+  align-items: flex-start;
+  background: var(--bg-row);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 20px minmax(0, 1fr);
+  line-height: 1.45;
+  padding: 11px 12px;
+}
+
+.reviewNoteItem svg {
+  margin-top: 2px;
+}
+
+.reviewNoteItem.issue svg {
+  color: var(--danger);
+}
+
+.reviewNoteItem.pending svg {
+  color: var(--warning);
+}
+
+.logSummary:hover {
+  background: var(--bg-muted);
+}
+
+@media (max-width: 1100px) {
+  .metricGridFour {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 960px) {
-  .unevenColumns {
-    grid-template-columns: 1fr; /* Stack on mobile[cite: 1] */
+  .toolGraphGrid,
+  .metricGridFour,
+  .documentHistoryFilters {
+    grid-template-columns: 1fr;
+  }
+
+  .emailFooter {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .historyToggleGroup {
+    display: grid;
+    width: 100%;
+  }
+
+  .metricGridFour {
+    grid-template-columns: 1fr;
   }
 }

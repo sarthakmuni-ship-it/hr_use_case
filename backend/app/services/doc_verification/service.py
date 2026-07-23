@@ -2,7 +2,9 @@ import logging
 import asyncio
 from pathlib import Path
 
+
 from fastapi import UploadFile
+
 
 from app.db.models import DocumentVerificationFile, User
 from app.db.session import AsyncSessionLocal
@@ -22,12 +24,35 @@ from app.services.doc_verification.google_drive import GoogleDriveImportService
 from app.services.doc_verification.storage import DocumentStorageService
 
 
+
+
 logger = logging.getLogger(__name__)
 UNKNOWN_CANDIDATE_LABEL = "Analyzing documents"
+BACKEND_DIR = Path(__file__).resolve().parents[3]
+
+
+
+
+def resolve_stored_file_path(file_path: str) -> Path:
+    path = Path(file_path)
+    if path.exists():
+        return path
+
+
+    if not path.is_absolute():
+        backend_relative = BACKEND_DIR / path
+        if backend_relative.exists():
+            return backend_relative
+
+
+    return path
+
+
 
 
 class DocumentVerificationService:
     """Use cases for HR onboarding document verification."""
+
 
     def __init__(
         self,
@@ -36,6 +61,7 @@ class DocumentVerificationService:
     ):
         self.repository = repository
         self.storage = storage or DocumentStorageService()
+
 
     async def submit(
         self,
@@ -62,6 +88,7 @@ class DocumentVerificationService:
             len(stored_files),
         )
         return submission.id
+
 
     async def submit_from_google_drive(
         self,
@@ -92,6 +119,7 @@ class DocumentVerificationService:
         )
         return submission.id
 
+
     async def list_submissions(self) -> list[DocumentVerificationSubmissionSummary]:
         submissions = await self.repository.list_submissions()
         return [
@@ -107,6 +135,7 @@ class DocumentVerificationService:
             )
             for submission in submissions
         ]
+
 
     async def detail(self, submission_id: int) -> DocumentVerificationSubmissionDetail | None:
         submission = await self.repository.get_submission(submission_id)
@@ -126,8 +155,10 @@ class DocumentVerificationService:
             files=[self._file_response(file) for file in files],
         )
 
+
     async def file(self, file_id: int) -> DocumentVerificationFile | None:
         return await self.repository.get_file(file_id)
+
 
     async def file_by_submission_and_name(
         self,
@@ -135,6 +166,7 @@ class DocumentVerificationService:
         filename: str,
     ) -> DocumentVerificationFile | None:
         return await self.repository.get_file_by_submission_and_name(submission_id, filename)
+
 
     @staticmethod
     def _file_response(file: DocumentVerificationFile) -> DocumentVerificationFileResponse:
@@ -147,8 +179,11 @@ class DocumentVerificationService:
         )
 
 
+
+
 async def process_document_verification_submission(submission_id: int) -> None:
     """Background job that runs the HRAI document pipeline for one submission."""
+
 
     # Load DB state first, then release the session before the long-running LLM work.
     async with AsyncSessionLocal() as session:
@@ -159,10 +194,12 @@ async def process_document_verification_submission(submission_id: int) -> None:
             return
         files = await repository.get_files(submission_id)
         uploaded_files = [
-            {"originalName": file.filename, "storedPath": file.file_path}
+            {"originalName": file.filename, "storedPath": str(resolved_path)}
             for file in files
-            if Path(file.file_path).exists()
+            for resolved_path in [resolve_stored_file_path(file.file_path)]
+            if resolved_path.exists()
         ]
+
 
     try:
         logger.info(
@@ -191,3 +228,8 @@ async def process_document_verification_submission(submission_id: int) -> None:
             repository = DocumentVerificationRepository(session)
             await repository.mark_failed(submission_id, str(exc))
             await session.commit()
+
+
+
+
+

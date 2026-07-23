@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Edit3,
   Eye,
   EyeOff,
   ShieldCheck,
@@ -9,6 +10,7 @@ import {
   Users as UsersIcon,
   ChevronLeft,
   ChevronRight,
+  XCircle,
 } from "lucide-react";
 import { usersApi } from "../api";
 import ProfileDropdown from "../components/ProfileDropdown";
@@ -19,6 +21,11 @@ const initialForm = {
   email: "",
   password: "",
   role: "user",
+};
+
+const initialEditForm = {
+  role: "user",
+  is_active: true,
 };
 
 export default function UsersPage({ account, onLogout }) {
@@ -33,6 +40,8 @@ export default function UsersPage({ account, onLogout }) {
   const [page, setPage] = useState(1);
   const itemsPerPage = 5;
   const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState(initialEditForm);
 
   const adminCount = users.filter((user) => user.role === "admin").length;
 
@@ -75,27 +84,28 @@ export default function UsersPage({ account, onLogout }) {
     }
   }
 
-  async function toggleRole(user) {
-    const nextRole = user.role === "admin" ? "user" : "admin";
-    setRowActionId(user.id);
+  function openEditUser(user) {
+    setEditingUser(user);
+    setEditForm({
+      role: user.role,
+      is_active: user.is_active,
+    });
     setError("");
-
-    try {
-      await usersApi.update(user.id, { role: nextRole });
-      await loadUsers();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setRowActionId(null);
-    }
+    setMessage("");
   }
 
-  async function toggleActive(user) {
-    setRowActionId(user.id);
+  async function handleEditSubmit(event) {
+    event.preventDefault();
+    if (!editingUser) return;
+
+    setRowActionId(editingUser.id);
     setError("");
+    setMessage("");
 
     try {
-      await usersApi.update(user.id, { is_active: !user.is_active });
+      await usersApi.update(editingUser.id, editForm);
+      setMessage(`User "${editingUser.full_name}" updated successfully.`);
+      setEditingUser(null);
       await loadUsers();
     } catch (err) {
       setError(err.message);
@@ -291,40 +301,38 @@ export default function UsersPage({ account, onLogout }) {
                     </td>
                     <td>{user.email}</td>
                     <td>
-                      <button
-                        className={user.role === "admin" ? "badge badgeMatch badgeToggle" : "badge badgeToggle"}
-                        disabled={isSelf || rowBusy}
-                        onClick={() => toggleRole(user)}
-                        title={isSelf ? "You can't change your own role" : "Click to toggle role"}
-                        type="button"
-                      >
+                      <span className={user.role === "admin" ? "badge badgeMatch" : "badge badgeToggle"}>
                         {user.role === "admin" ? "Admin" : "User"}
-                      </button>
+                      </span>
                     </td>
                     <td>
-                      <button
-                        className={
-                          user.is_active ? "badge badgeMatch badgeToggle" : "badge badgeMismatch badgeToggle"
-                        }
-                        disabled={isSelf || rowBusy}
-                        onClick={() => toggleActive(user)}
-                        title={isSelf ? "You can't change your own status" : "Click to toggle status"}
-                        type="button"
-                      >
+                      <span className={user.is_active ? "badge badgeMatch" : "badge badgeMismatch"}>
                         {user.is_active ? "Active" : "Inactive"}
-                      </button>
+                      </span>
                     </td>
                     <td>
-                      <button
-                        aria-label="Delete user"
-                        className="iconAction danger"
-                        disabled={isSelf || rowBusy}
-                        onClick={() => handleDelete(user)}
-                        title={isSelf ? "You can't delete your own account" : "Delete user"}
-                        type="button"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      <div className="tableActionGroup">
+                        <button
+                          aria-label="Edit user"
+                          className="iconAction"
+                          disabled={isSelf || rowBusy}
+                          onClick={() => openEditUser(user)}
+                          title={isSelf ? "You can't edit your own role or status" : "Edit user"}
+                          type="button"
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                        <button
+                          aria-label="Delete user"
+                          className="iconAction danger"
+                          disabled={isSelf || rowBusy}
+                          onClick={() => handleDelete(user)}
+                          title={isSelf ? "You can't delete your own account" : "Delete user"}
+                          type="button"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -361,6 +369,65 @@ export default function UsersPage({ account, onLogout }) {
         )}
         {!loading && !users.length && <p className="emptyText">No users found.</p>}
       </section>
+
+      {editingUser && (
+        <div className="logModal" role="dialog" aria-modal="true">
+          <form className="logModalPanel userEditModalPanel" onSubmit={handleEditSubmit}>
+            <header className="logModalHeader">
+              <div>
+                <span className="badge badgeToggle">Edit User</span>
+                <h2>{editingUser.full_name}</h2>
+              </div>
+              <button
+                aria-label="Close edit user"
+                className="iconAction"
+                onClick={() => setEditingUser(null)}
+                title="Close"
+                type="button"
+              >
+                <XCircle size={17} />
+              </button>
+            </header>
+
+            <div className="userFormGrid singleColumnForm">
+              <label>
+                Role
+                <select
+                  name="role"
+                  onChange={(event) => setEditForm((current) => ({ ...current, role: event.target.value }))}
+                  value={editForm.role}
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
+              <label>
+                Status
+                <select
+                  name="is_active"
+                  onChange={(event) =>
+                    setEditForm((current) => ({ ...current, is_active: event.target.value === "true" }))
+                  }
+                  value={String(editForm.is_active)}
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="actionRow">
+              <button className="primaryAction" disabled={rowActionId === editingUser.id} type="submit">
+                <Edit3 size={16} />
+                {rowActionId === editingUser.id ? "Saving..." : "Save Changes"}
+              </button>
+              <button className="secondaryAction" onClick={() => setEditingUser(null)} type="button">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </section>
   );
 }

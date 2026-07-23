@@ -7,6 +7,7 @@ from app.core.security import hash_password
 
 from app.core.security import (
     create_access_token,
+    create_refresh_token,
     verify_password,
 )
 from app.db.models import User
@@ -156,11 +157,11 @@ async def authenticate_user(
     db: AsyncSession,
     email: str,
     password: str,
-) -> tuple[User | None, str | None]:
+) -> tuple[User | None, str | None, str | None]:
     """
     Authenticate a user.
     Returns:
-        (user, access_token)
+        (user, access_token, refresh_token)
     """
 
     user = await get_user_by_email(
@@ -169,16 +170,19 @@ async def authenticate_user(
     )
 
     if user is None:
-        return None, None
+        return None, None, None
 
     if not verify_password(
         password,
         user.password_hash,
     ):
-        return None, None
+        return None, None, None
 
-    token = create_access_token(
+    access_token = create_access_token(
+        subject=user.email,
+    )
+    refresh_token = create_refresh_token(
         subject=user.email,
     )
 
-    return user, token
+    return user, access_token, refresh_token

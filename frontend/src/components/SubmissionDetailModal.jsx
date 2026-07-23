@@ -226,14 +226,25 @@ export default function SubmissionDetailModal({ submissionId, onClose }) {
             </section>
 
             {(issues.length > 0 || pendingDocs.length > 0) && (
-              <section className="modalSection compactReviewList">
+              <section className="modalSection reviewNotesPanel">
                 <div className="modalSectionHeader">
                   <AlertTriangle size={16} />
                   <h3>Review notes</h3>
                 </div>
-                {[...issues, ...pendingDocs.map((doc) => `Pending: ${doc}`)].map((item, i) => (
-                  <span className="reviewNoteChip" key={`${item}-${i}`}>{item}</span>
-                ))}
+                <ul className="reviewNotesList">
+                  {issues.map((item, i) => (
+                    <li className="reviewNoteItem issue" key={`issue-${item}-${i}`}>
+                      <AlertTriangle size={15} />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                  {pendingDocs.map((doc, i) => (
+                    <li className="reviewNoteItem pending" key={`pending-${doc}-${i}`}>
+                      <Clock3 size={15} />
+                      <span>{doc}</span>
+                    </li>
+                  ))}
+                </ul>
               </section>
             )}
 

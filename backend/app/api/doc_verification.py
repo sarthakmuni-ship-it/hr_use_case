@@ -1,10 +1,12 @@
 from pathlib import Path
 import logging
 
+
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+
 
 from app.api.deps import get_current_user
 from app.db.models import User
@@ -22,14 +24,39 @@ from app.services.doc_verification.service import (
 )
 
 
+
+
 router = APIRouter(prefix="/api/doc-verification", tags=["Document Verification"])
 logger = logging.getLogger(__name__)
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+
+
+
+
+def _resolve_stored_file_path(file_path: str) -> Path:
+    path = Path(file_path)
+    if path.exists():
+        return path
+
+
+    if not path.is_absolute():
+        backend_relative = BACKEND_DIR / path
+        if backend_relative.exists():
+            return backend_relative
+
+
+    return path
+
+
 
 
 def _service(session: AsyncSession) -> DocumentVerificationService:
     """Build route-scoped services around the request's database session."""
 
+
     return DocumentVerificationService(DocumentVerificationRepository(session))
+
+
 
 
 @router.get(
@@ -53,6 +80,8 @@ async def list_submissions(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database unavailable while loading document submissions.",
         ) from exc
+
+
 
 
 @router.post(
@@ -79,6 +108,7 @@ async def submit_documents(
             detail="Database unavailable while saving document submission.",
         ) from exc
 
+
     background_tasks.add_task(process_document_verification_submission, submission_id)
     logger.info(
         "[DOC_VERIFY] Queued local submission processing user=%s submission_id=%s",
@@ -89,6 +119,8 @@ async def submit_documents(
         message="Document submission saved. Verification processing has started.",
         submission_id=submission_id,
     )
+
+
 
 
 @router.post(
@@ -118,6 +150,7 @@ async def submit_google_drive_documents(
             detail="Database unavailable while saving Google Drive document submission.",
         ) from exc
 
+
     background_tasks.add_task(process_document_verification_submission, submission_id)
     logger.info(
         "[DOC_VERIFY] Queued Google Drive submission processing user=%s submission_id=%s",
@@ -128,6 +161,8 @@ async def submit_google_drive_documents(
         message="Google Drive documents imported. Verification processing has started.",
         submission_id=submission_id,
     )
+
+
 
 
 @router.get(
@@ -147,6 +182,7 @@ async def get_submission_detail(
             detail="Database unavailable while loading document submission.",
         ) from exc
 
+
     if not detail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found.")
     logger.info(
@@ -155,6 +191,8 @@ async def get_submission_detail(
         submission_id,
     )
     return detail
+
+
 
 
 @router.get("/files/{file_id}/download")
@@ -171,18 +209,23 @@ async def download_submission_file(
             detail="Database unavailable while loading document file.",
         ) from exc
 
+
     if not file:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
 
-    file_path = Path(file.file_path)
+
+    file_path = _resolve_stored_file_path(file.file_path)
     if not file_path.exists():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File missing on disk.")
+
 
     return FileResponse(
         file_path,
         media_type=file.content_type or "application/octet-stream",
         filename=file.filename,
     )
+
+
 
 
 @router.get("/submissions/{submission_id}/files/{filename}")
@@ -200,15 +243,23 @@ async def download_submission_file_by_name(
             detail="Database unavailable while loading document file.",
         ) from exc
 
+
     if not file:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
 
-    file_path = Path(file.file_path)
+
+    file_path = _resolve_stored_file_path(file.file_path)
     if not file_path.exists():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File missing on disk.")
+
 
     return FileResponse(
         file_path,
         media_type=file.content_type or "application/octet-stream",
         filename=file.filename,
     )
+
+
+
+
+

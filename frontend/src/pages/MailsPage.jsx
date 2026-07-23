@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock3, Filter, Inbox, RefreshCcw, X } from "lucide-react";
+import { Clock3, Filter, Inbox, RefreshCcw, X } from "lucide-react";
 import { emailsApi, getAttachmentPreview } from "../api";
 import MailList from "../components/MailList";
 import VerificationDetail from "../components/VerificationDetail";
 import ProfileDropdown from "../components/ProfileDropdown";
+import { isValidDisplayDate, parseDisplayDate } from "../utils/date";
 
 export default function MailsPage({
   account,
@@ -26,28 +27,30 @@ export default function MailsPage({
     toDate: "",
   });
 
+  const reviewEmails = emails.filter((email) => email.status !== "completed");
   const activeFilterCount = [
     filters.status !== "all",
     Boolean(filters.fromDate),
     Boolean(filters.toDate),
   ].filter(Boolean).length;
-  const newCount = emails.filter((email) => email.status === "new").length;
-  const pendingCount = emails.filter((email) => email.status === "pending").length;
-  const completedCount = emails.filter((email) => email.status === "completed").length;
-  const totalCount = Math.max(emails.length, 1);
+  const newCount = reviewEmails.filter((email) => email.status === "new").length;
+  const pendingCount = reviewEmails.filter((email) => email.status === "pending").length;
+  const totalCount = Math.max(reviewEmails.length, 1);
 
-  const filteredEmails = emails.filter((email) => {
+  const filteredEmails = reviewEmails.filter((email) => {
     if (filters.status !== "all" && email.status !== filters.status) {
       return false;
     }
 
     const receivedDate = String(email.received_at || "").slice(0, 10);
+    const fromDate = parseDisplayDate(filters.fromDate);
+    const toDate = parseDisplayDate(filters.toDate);
 
-    if (filters.fromDate && receivedDate < filters.fromDate) {
+    if (fromDate && receivedDate < fromDate) {
       return false;
     }
 
-    if (filters.toDate && receivedDate > filters.toDate) {
+    if (toDate && receivedDate > toDate) {
       return false;
     }
 
@@ -213,30 +216,19 @@ export default function MailsPage({
                 <strong>{pendingCount}</strong>
               </div>
             </article>
-            <article className="metricCard">
-              <span className="metricIcon success">
-                <CheckCircle2 size={18} />
-              </span>
-              <div>
-                <small>Completed</small>
-                <strong>{completedCount}</strong>
-              </div>
-            </article>
           </section>
           <section className="panel statusOverview">
             <div className="statusOverviewHeader">
               <span>Review Pipeline</span>
-              <strong>{emails.length} total</strong>
+              <strong>{reviewEmails.length} active</strong>
             </div>
             <div className="statusBar" aria-label="Mail status distribution">
               <span className="statusSegment new" style={{ width: `${(newCount / totalCount) * 100}%` }} />
               <span className="statusSegment pending" style={{ width: `${(pendingCount / totalCount) * 100}%` }} />
-              <span className="statusSegment completed" style={{ width: `${(completedCount / totalCount) * 100}%` }} />
             </div>
             <div className="statusLegend">
               <span><i className="legendDot new" />New</span>
               <span><i className="legendDot pending" />Pending</span>
-              <span><i className="legendDot completed" />Completed</span>
             </div>
           </section>
         </>
@@ -264,7 +256,6 @@ export default function MailsPage({
                     <option value="all">All statuses</option>
                     <option value="new">New</option>
                     <option value="pending">Pending</option>
-                    <option value="completed">Completed</option>
                   </select>
                 </label>
                 <label>
@@ -272,18 +263,22 @@ export default function MailsPage({
                   <input
                     name="fromDate"
                     onChange={updateFilter}
-                    type="date"
+                    placeholder="DD/MM/YYYY"
+                    type="text"
                     value={filters.fromDate}
                   />
+                  {!isValidDisplayDate(filters.fromDate) && <span className="fieldHint error">Use DD/MM/YYYY</span>}
                 </label>
                 <label>
                   To
                   <input
                     name="toDate"
                     onChange={updateFilter}
-                    type="date"
+                    placeholder="DD/MM/YYYY"
+                    type="text"
                     value={filters.toDate}
                   />
+                  {!isValidDisplayDate(filters.toDate) && <span className="fieldHint error">Use DD/MM/YYYY</span>}
                 </label>
                 <button
                   className="filterClear"

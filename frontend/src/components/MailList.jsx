@@ -31,7 +31,7 @@ export default function MailList({ emails, selectedId, onSelect }) {
             type="button"
           >
             <span className="emailSubject">{email.subject}</span>
-            <span className="emailMeta">{email.sender}</span>
+            <span className="emailSender">{email.sender}</span>
             <div className="emailFooter">
               <span className="emailTime">{formatDateTime(email.received_at)}</span>
               <MailStatusBadge status={email.status} />

@@ -12,10 +12,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { emailsApi, logsApi } from "../api";
-import { StatusBadge } from "../components/Badges";
+import { docVerificationApi, emailsApi, logsApi } from "../api";
+import { StatusBadge, VerificationStatusBadge } from "../components/Badges";
 import { formatDateTime } from "../utils/date";
 import ProfileDropdown from "../components/ProfileDropdown";
+import SubmissionDetailModal from "../components/SubmissionDetailModal";
 
 function formatDecision(value) {
   return value === "approve_reply" ? "Approved" : "Rejected";
@@ -27,14 +28,20 @@ function decisionBadgeClass(value) {
 
 export default function LogsPage({ account, onLogout, refreshSignal, onLoadingChange, onError }) {
   const [logs, setLogs] = useState([]);
+  const [docLogs, setDocLogs] = useState([]);
+  const [historyType, setHistoryType] = useState("background");
   const [selectedLog, setSelectedLog] = useState(null);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState(null);
   const [verificationByEmail, setVerificationByEmail] = useState({});
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [userFilter, setUserFilter] = useState("");
+  const [candidateFilter, setCandidateFilter] = useState("");
+  const [docStatusFilter, setDocStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const itemsPerPage = 5;
 
   const normalizedUserFilter = userFilter.trim().toLowerCase();
+  const normalizedCandidateFilter = candidateFilter.trim().toLowerCase();
   const filteredLogs = normalizedUserFilter
     ? logs.filter((log) => {
         const userName = log.user_full_name || "";
@@ -42,10 +49,26 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
         return `${userName} ${userEmail}`.toLowerCase().includes(normalizedUserFilter);
       })
     : logs;
+  const filteredDocLogs = docLogs.filter((log) => {
+    if (
+      normalizedCandidateFilter &&
+      !String(log.candidate_name || "").toLowerCase().includes(normalizedCandidateFilter)
+    ) {
+      return false;
+    }
+
+    if (docStatusFilter !== "all" && log.status !== docStatusFilter) {
+      return false;
+    }
+
+    return true;
+  });
 
   const approvedCount = logs.filter((log) => log.decision === "approve_reply").length;
   const rejectedCount = logs.filter((log) => log.decision === "reject_reply").length;
   const decisionTotal = Math.max(logs.length, 1);
+  const docVerifiedCount = docLogs.filter((log) => log.status === "VERIFIED").length;
+  const docReviewCount = docLogs.filter((log) => log.status === "NEEDS_HUMAN_REVIEW").length;
   const selectedVerification = selectedLog ? verificationByEmail[selectedLog.email_id] : null;
   const sentReplyText =
     selectedLog?.sent_reply ||
@@ -57,7 +80,12 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
     onError("");
 
     try {
-      setLogs(await logsApi.list());
+      const [mailLogs, documentLogs] = await Promise.all([
+        logsApi.list(),
+        docVerificationApi.list(),
+      ]);
+      setLogs(mailLogs);
+      setDocLogs(documentLogs);
     } catch (err) {
       onError(err.message);
     } finally {
@@ -87,109 +115,171 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
 
   useEffect(() => {
     setPage(1);
-  }, [userFilter]);
+  }, [userFilter, candidateFilter, docStatusFilter, historyType]);
 
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
+  const activeRows = historyType === "background" ? filteredLogs : filteredDocLogs;
+  const totalPages = Math.ceil(activeRows.length / itemsPerPage) || 1;
   const startIndex = (page - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, filteredLogs.length);
+  const endIndex = Math.min(startIndex + itemsPerPage, activeRows.length);
   const paginatedLogs = filteredLogs.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedDocLogs = filteredDocLogs.slice(startIndex, startIndex + itemsPerPage);
+  const activeFilterCount =
+    historyType === "background"
+      ? Number(Boolean(userFilter))
+      : [Boolean(candidateFilter), docStatusFilter !== "all"].filter(Boolean).length;
 
   return (
     <section className="contentPage">
       <div className="pageTitleRow">
         <div>
           <p className="eyebrow">Audit trail</p>
-          <h1>Logs</h1>
+          <h1>History</h1>
         </div>
         <div className="logToolbar">
           <button
-            aria-label="Filter logs"
+            aria-label="Filter history"
             aria-pressed={filtersOpen}
-            className={filtersOpen || userFilter ? "iconAction active" : "iconAction"}
+            className={filtersOpen || activeFilterCount ? "iconAction active" : "iconAction"}
             onClick={() => setFiltersOpen((current) => !current)}
-            title="Filter logs"
+            title="Filter history"
             type="button"
           >
             <Filter size={17} />
-            {userFilter && <span className="filterCount">1</span>}
+            {activeFilterCount > 0 && <span className="filterCount">{activeFilterCount}</span>}
           </button>
           <ProfileDropdown account={account} onLogout={onLogout} />
         </div>
       </div>
+      <section className="historyToggleGroup" aria-label="History type">
+        <button
+          className={historyType === "background" ? "historyToggle active" : "historyToggle"}
+          onClick={() => setHistoryType("background")}
+          type="button"
+        >
+          <Mail size={16} />
+          Background Verification
+        </button>
+        <button
+          className={historyType === "documents" ? "historyToggle active" : "historyToggle"}
+          onClick={() => setHistoryType("documents")}
+          type="button"
+        >
+          <FileText size={16} />
+          Document Verification
+        </button>
+      </section>
       <section className="metricGrid">
-        <article className="metricCard">
-          <span className="metricIcon success">
-            <CheckCircle2 size={18} />
-          </span>
-          <div>
-            <small>Approved</small>
-            <strong>{approvedCount}</strong>
-          </div>
-        </article>
-        <article className="metricCard">
-          <span className="metricIcon danger">
-            <XCircle size={18} />
-          </span>
-          <div>
-            <small>Rejected</small>
-            <strong>{rejectedCount}</strong>
-          </div>
-        </article>
-        <article className="metricCard">
-          <span className="metricIcon">
-            <Search size={18} />
-          </span>
-          <div>
-            <small>Visible Logs</small>
-            <strong>{filteredLogs.length}</strong>
-          </div>
-        </article>
+        {historyType === "background" ? (
+          <>
+            <article className="metricCard">
+              <span className="metricIcon success"><CheckCircle2 size={18} /></span>
+              <div><small>Approved</small><strong>{approvedCount}</strong></div>
+            </article>
+            <article className="metricCard">
+              <span className="metricIcon danger"><XCircle size={18} /></span>
+              <div><small>Rejected</small><strong>{rejectedCount}</strong></div>
+            </article>
+            <article className="metricCard">
+              <span className="metricIcon"><Search size={18} /></span>
+              <div><small>Visible History</small><strong>{filteredLogs.length}</strong></div>
+            </article>
+          </>
+        ) : (
+          <>
+            <article className="metricCard">
+              <span className="metricIcon success"><CheckCircle2 size={18} /></span>
+              <div><small>Verified</small><strong>{docVerifiedCount}</strong></div>
+            </article>
+            <article className="metricCard">
+              <span className="metricIcon danger"><XCircle size={18} /></span>
+              <div><small>Needs Review</small><strong>{docReviewCount}</strong></div>
+            </article>
+            <article className="metricCard">
+              <span className="metricIcon"><Search size={18} /></span>
+              <div><small>Visible History</small><strong>{filteredDocLogs.length}</strong></div>
+            </article>
+          </>
+        )}
       </section>
-      <section className="panel statusOverview">
-        <div className="statusOverviewHeader">
-          <span>Decision Mix</span>
-          <strong>{logs.length} total</strong>
-        </div>
-        <div className="statusBar" aria-label="Decision distribution">
-          <span className="statusSegment completed" style={{ width: `${(approvedCount / decisionTotal) * 100}%` }} />
-          <span className="statusSegment rejected" style={{ width: `${(rejectedCount / decisionTotal) * 100}%` }} />
-        </div>
-        <div className="statusLegend">
-          <span><i className="legendDot completed" />Approved</span>
-          <span><i className="legendDot rejected" />Rejected</span>
-        </div>
-      </section>
+      {historyType === "background" && (
+        <section className="panel statusOverview">
+          <div className="statusOverviewHeader">
+            <span>Decision Mix</span>
+            <strong>{logs.length} total</strong>
+          </div>
+          <div className="statusBar" aria-label="Decision distribution">
+            <span className="statusSegment completed" style={{ width: `${(approvedCount / decisionTotal) * 100}%` }} />
+            <span className="statusSegment rejected" style={{ width: `${(rejectedCount / decisionTotal) * 100}%` }} />
+          </div>
+          <div className="statusLegend">
+            <span><i className="legendDot completed" />Approved</span>
+            <span><i className="legendDot rejected" />Rejected</span>
+          </div>
+        </section>
+      )}
       {filtersOpen && (
         <section className="panel filterPanel">
-          <div className="logFilterControls">
-            <label>
-              Processed by
-              <input
-                onChange={(event) => setUserFilter(event.target.value)}
-                placeholder="Search name or email"
-                type="search"
-                value={userFilter}
-              />
-            </label>
-            <button
-              className="filterClear"
-              disabled={!userFilter}
-              onClick={() => setUserFilter("")}
-              type="button"
-            >
-              <XCircle size={15} />
-              Clear
-            </button>
-          </div>
+          {historyType === "background" ? (
+            <div className="logFilterControls">
+              <label>
+                Processed by
+                <input
+                  onChange={(event) => setUserFilter(event.target.value)}
+                  placeholder="Search name or email"
+                  type="search"
+                  value={userFilter}
+                />
+              </label>
+              <button className="filterClear" disabled={!userFilter} onClick={() => setUserFilter("")} type="button">
+                <XCircle size={15} />
+                Clear
+              </button>
+            </div>
+          ) : (
+            <div className="logFilterControls documentHistoryFilters">
+              <label>
+                Candidate name
+                <input
+                  onChange={(event) => setCandidateFilter(event.target.value)}
+                  placeholder="Search candidate"
+                  type="search"
+                  value={candidateFilter}
+                />
+              </label>
+              <label>
+                Status
+                <select onChange={(event) => setDocStatusFilter(event.target.value)} value={docStatusFilter}>
+                  <option value="all">All statuses</option>
+                  <option value="PROCESSING">Processing</option>
+                  <option value="VERIFIED">Verified</option>
+                  <option value="NEEDS_HUMAN_REVIEW">Needs Review</option>
+                  <option value="PENDING_DOCUMENTS">Pending Documents</option>
+                  <option value="SYSTEM_ERROR">System Error</option>
+                </select>
+              </label>
+              <button
+                className="filterClear"
+                disabled={!candidateFilter && docStatusFilter === "all"}
+                onClick={() => {
+                  setCandidateFilter("");
+                  setDocStatusFilter("all");
+                }}
+                type="button"
+              >
+                <XCircle size={15} />
+                Clear
+              </button>
+            </div>
+          )}
         </section>
       )}
       <section className="panel">
         <div className="panelHeader">
-          <h2>Decision Logs</h2>
+          <h2>{historyType === "background" ? "Background Verification History" : "Document Verification History"}</h2>
         </div>
-        <div className="logList">
-          {paginatedLogs.map((log) => {
-            return (
+        {historyType === "background" ? (
+          <div className="logList">
+            {paginatedLogs.map((log) => (
               <article className="logItem" key={log.id}>
                 <button className="logSummary" onClick={() => openLog(log)} type="button">
                   <FileText size={17} />
@@ -202,13 +292,51 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
                   <span>{formatDateTime(log.decided_at)}</span>
                 </button>
               </article>
-            );
-          })}
-        </div>
-        {filteredLogs.length > 0 && (
+            ))}
+          </div>
+        ) : (
+          <div className="comparisonTableWrap">
+            <table className="comparisonTable">
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Status</th>
+                  <th>Verdict</th>
+                  <th>Issues</th>
+                  <th>Updated</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedDocLogs.map((log) => (
+                  <tr className="clickable" key={log.id} onClick={() => setSelectedSubmissionId(log.id)}>
+                    <td>{log.candidate_name}</td>
+                    <td><VerificationStatusBadge status={log.status} /></td>
+                    <td>{log.verdict_summary || log.summary || log.status}</td>
+                    <td>{log.issue_count}</td>
+                    <td>{formatDateTime(log.updated_at || log.created_at)}</td>
+                    <td>
+                      <button
+                        className="paginationBtn"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedSubmissionId(log.id);
+                        }}
+                        type="button"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {activeRows.length > 0 && (
           <div className="paginationRow">
             <span className="paginationInfo">
-              Showing {startIndex + 1}–{endIndex} of {filteredLogs.length}
+              Showing {startIndex + 1}–{endIndex} of {activeRows.length}
             </span>
             <div className="paginationButtons">
               <button
@@ -232,9 +360,11 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
             </div>
           </div>
         )}
-        {!filteredLogs.length && (
+        {!activeRows.length && (
           <p className="emptyText">
-            {logs.length ? "No logs match the current filter." : "No approval or rejection logs yet."}
+            {historyType === "background"
+              ? logs.length ? "No history records match the current filter." : "No approval or rejection history yet."
+              : docLogs.length ? "No document history records match the current filter." : "No document verification history yet."}
           </p>
         )}
       </section>
@@ -365,6 +495,12 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
             </div>
           </div>
         </div>
+      )}
+      {selectedSubmissionId && (
+        <SubmissionDetailModal
+          onClose={() => setSelectedSubmissionId(null)}
+          submissionId={selectedSubmissionId}
+        />
       )}
     </section>
   );

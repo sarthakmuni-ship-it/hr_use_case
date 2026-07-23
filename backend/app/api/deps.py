@@ -22,7 +22,7 @@ async def get_current_user(
         payload = decode_access_token(token)
         email = payload.get("sub")
 
-        if email is None:
+        if email is None or payload.get("type") not in {None, "access"}:
             raise credentials_exception
     except InvalidTokenError:
         raise credentials_exception

@@ -7,7 +7,7 @@ export default function Sidebar({ account, activeView, onLogout, onNavigate }) {
     { id: "mails", label: "Background Verification", icon: Inbox },
     { id: "verification", label: "Document Verification", icon: FileCheck2 },
     { id: "settings", label: "Settings", icon: Settings },
-    { id: "logs", label: "Logs", icon: ListChecks },
+    { id: "logs", label: "History", icon: ListChecks },
     ...(account?.role === "admin"
       ? [{ id: "users", label: "Users", icon: Users }]
       : []),
@@ -18,8 +18,8 @@ export default function Sidebar({ account, activeView, onLogout, onNavigate }) {
       <div className="sidebarLogo">
         <Layers className="logoIcon" size={22} />
         <div>
-          <span className="logoText">JEVA</span>
-          <small className="logoTagline">Background Verification</small>
+          <span className="logoText">Jade Astra</span>
+          <small className="logoTagline">HR Task Automation</small>
         </div>
       </div>
       

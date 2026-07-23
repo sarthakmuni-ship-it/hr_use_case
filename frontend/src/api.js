@@ -5,22 +5,95 @@ export function getToken() {
   return localStorage.getItem("access_token");
 }
 
-export function setToken(token) {
+export function getRefreshToken() {
+  return localStorage.getItem("refresh_token");
+}
+
+export function setToken(token, refreshToken = null) {
   localStorage.setItem("access_token", token);
+  if (refreshToken) {
+    localStorage.setItem("refresh_token", refreshToken);
+  }
 }
 
 export function clearToken() {
   localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+}
+
+let refreshRequest = null;
+
+async function refreshAccessToken() {
+  const refreshToken = getRefreshToken();
+
+  if (!refreshToken) {
+    clearToken();
+    return null;
+  }
+
+  if (!refreshRequest) {
+    refreshRequest = fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          clearToken();
+          throw new Error(data.detail || "Session expired");
+        }
+
+        setToken(data.access_token, data.refresh_token);
+        return data.access_token;
+      })
+      .finally(() => {
+        refreshRequest = null;
+      });
+  }
+
+  return refreshRequest;
+}
+
+async function authedFetch(url, options = {}, retryOnUnauthorized = true) {
+  const token = getToken();
+  const headers = {
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(options.headers || {}),
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (response.status !== 401 || !retryOnUnauthorized) {
+    return response;
+  }
+
+  const refreshedToken = await refreshAccessToken();
+
+  if (!refreshedToken) {
+    return response;
+  }
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...headers,
+      Authorization: `Bearer ${refreshedToken}`,
+    },
+  });
 }
 
 export async function apiRequest(path, options = {}) {
-  const token = getToken();
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await authedFetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
       ...(options.headers || {}),
     },
   });
@@ -58,7 +131,7 @@ export async function login(email, password) {
     throw new Error(data.detail || "Login failed");
   }
 
-  setToken(data.access_token);
+  setToken(data.access_token, data.refresh_token);
   return data;
 }
 
@@ -92,15 +165,11 @@ export const docVerificationApi = {
   list: () => apiRequest("/doc-verification/submissions"),
   detail: (submissionId) => apiRequest(`/doc-verification/submissions/${submissionId}`),
   submit: async (files) => {
-    const token = getToken();
     const formData = new FormData();
     files.forEach((file) => formData.append("files", file));
 
-    const response = await fetch(`${API_BASE_URL}/doc-verification/submit`, {
+    const response = await authedFetch(`${API_BASE_URL}/doc-verification/submit`, {
       method: "POST",
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
       body: formData,
     });
 
@@ -120,9 +189,7 @@ export const docVerificationApi = {
 };
 
 export async function fetchAuthedFile(relativePath) {
-  const response = await fetch(`${API_BASE_URL}${relativePath}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
+  const response = await authedFetch(`${API_BASE_URL}${relativePath}`);
   if (!response.ok) {
     throw new Error("File fetch failed");
   }
@@ -149,11 +216,7 @@ export const usersApi = {
 };
 
 export async function downloadAttachment(attachment) {
-  const response = await fetch(`${API_BASE_URL}/attachments/${attachment.id}/download`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-    },
-  });
+  const response = await authedFetch(`${API_BASE_URL}/attachments/${attachment.id}/download`);
 
   if (!response.ok) {
     throw new Error("Attachment download failed");
@@ -171,11 +234,7 @@ export async function downloadAttachment(attachment) {
 }
 
 export async function getAttachmentPreview(attachment) {
-  const response = await fetch(`${API_BASE_URL}/attachments/${attachment.id}/download`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-    },
-  });
+  const response = await authedFetch(`${API_BASE_URL}/attachments/${attachment.id}/download`);
 
   if (!response.ok) {
     throw new Error("Attachment preview failed");
