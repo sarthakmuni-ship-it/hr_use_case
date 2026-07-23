@@ -14,7 +14,7 @@ import { docVerificationApi } from "../api";
 import { VerificationStatusBadge } from "../components/Badges";
 import ProfileDropdown from "../components/ProfileDropdown";
 import SubmissionDetailModal from "../components/SubmissionDetailModal";
-import { formatDateTime, isToday } from "../utils/date";
+import { formatDateTime } from "../utils/date";
 
 const POLL_INTERVAL_MS = 4000;
 const MAX_FILES = 25;
@@ -52,15 +52,13 @@ export default function DocVerificationPage({ account, onLogout, onError }) {
     return () => clearInterval(interval);
   }, [refresh]);
 
-  const todaysSubmissions = submissions.filter((s) => isToday(s.updated_at || s.created_at));
-
   useEffect(() => {
     setPage(1);
-  }, [todaysSubmissions.length]);
+  }, [submissions.length]);
 
-  const verifiedCount = todaysSubmissions.filter((s) => s.status === "VERIFIED").length;
-  const reviewCount = todaysSubmissions.filter((s) => s.status === "NEEDS_HUMAN_REVIEW").length;
-  const processingCount = todaysSubmissions.filter((s) => s.status === "PROCESSING").length;
+  const verifiedCount = submissions.filter((s) => s.status === "VERIFIED").length;
+  const reviewCount = submissions.filter((s) => s.status === "NEEDS_HUMAN_REVIEW").length;
+  const processingCount = submissions.filter((s) => s.status === "PROCESSING").length;
 
   function handleFileChange(event) {
     // Accepts a zip archive OR multiple individual files/folders selected together.
@@ -122,10 +120,10 @@ export default function DocVerificationPage({ account, onLogout, onError }) {
     }
   }
 
-  const totalPages = Math.ceil(todaysSubmissions.length / itemsPerPage) || 1;
+  const totalPages = Math.ceil(submissions.length / itemsPerPage) || 1;
   const startIndex = (page - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, todaysSubmissions.length);
-  const paginated = todaysSubmissions.slice(startIndex, startIndex + itemsPerPage);
+  const endIndex = Math.min(startIndex + itemsPerPage, submissions.length);
+  const paginated = submissions.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <section className="contentPage">
@@ -141,7 +139,7 @@ export default function DocVerificationPage({ account, onLogout, onError }) {
       <section className="metricGrid" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
         <article className="metricCard">
           <span className="metricIcon"><FileStack size={18} /></span>
-          <div><small>Processed Today</small><strong>{todaysSubmissions.length}</strong></div>
+          <div><small>Total Processed</small><strong>{submissions.length}</strong></div>
         </article>
         <article className="metricCard">
           <span className="metricIcon success"><CheckCircle2 size={18} /></span>
@@ -242,7 +240,7 @@ export default function DocVerificationPage({ account, onLogout, onError }) {
 
       <section className="panel">
         <div className="panelHeader" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2>Today's Candidates</h2>
+          <h2>All Candidates</h2>
           <button
             className="primaryAction"
             onClick={() => setShowForm((c) => !c)}
@@ -256,8 +254,8 @@ export default function DocVerificationPage({ account, onLogout, onError }) {
 
         {!loaded ? (
           <p className="emptyText">Loading...</p>
-        ) : todaysSubmissions.length === 0 ? (
-          <p className="emptyText">No document verification submissions have been processed today.</p>
+        ) : submissions.length === 0 ? (
+          <p className="emptyText">No document verification submissions have been processed yet.</p>
         ) : (
           <>
             <div className="comparisonTableWrap">
@@ -297,7 +295,7 @@ export default function DocVerificationPage({ account, onLogout, onError }) {
             </div>
             <div className="paginationRow">
               <span className="paginationInfo">
-                Showing {startIndex + 1}–{endIndex} of {todaysSubmissions.length}
+                Showing {startIndex + 1}–{endIndex} of {submissions.length}
               </span>
               <div className="paginationButtons">
                 <button

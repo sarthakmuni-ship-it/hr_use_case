@@ -27,17 +27,17 @@ export default function MailsPage({
     toDate: "",
   });
 
-  const reviewEmails = emails.filter((email) => email.status !== "completed");
   const activeFilterCount = [
     filters.status !== "all",
     Boolean(filters.fromDate),
     Boolean(filters.toDate),
   ].filter(Boolean).length;
-  const newCount = reviewEmails.filter((email) => email.status === "new").length;
-  const pendingCount = reviewEmails.filter((email) => email.status === "pending").length;
-  const totalCount = Math.max(reviewEmails.length, 1);
+  const newCount = emails.filter((email) => email.status === "new").length;
+  const pendingCount = emails.filter((email) => email.status === "pending").length;
+  const completedCount = emails.filter((email) => email.status === "completed").length;
+  const totalCount = Math.max(emails.length, 1);
 
-  const filteredEmails = reviewEmails.filter((email) => {
+  const filteredEmails = emails.filter((email) => {
     if (filters.status !== "all" && email.status !== filters.status) {
       return false;
     }
@@ -216,19 +216,30 @@ export default function MailsPage({
                 <strong>{pendingCount}</strong>
               </div>
             </article>
+            <article className="metricCard">
+              <span className="metricIcon success">
+                <Inbox size={18} />
+              </span>
+              <div>
+                <small>Completed</small>
+                <strong>{completedCount}</strong>
+              </div>
+            </article>
           </section>
           <section className="panel statusOverview">
             <div className="statusOverviewHeader">
               <span>Review Pipeline</span>
-              <strong>{reviewEmails.length} active</strong>
+              <strong>{emails.length} total</strong>
             </div>
             <div className="statusBar" aria-label="Mail status distribution">
               <span className="statusSegment new" style={{ width: `${(newCount / totalCount) * 100}%` }} />
               <span className="statusSegment pending" style={{ width: `${(pendingCount / totalCount) * 100}%` }} />
+              <span className="statusSegment completed" style={{ width: `${(completedCount / totalCount) * 100}%` }} />
             </div>
             <div className="statusLegend">
               <span><i className="legendDot new" />New</span>
               <span><i className="legendDot pending" />Pending</span>
+              <span><i className="legendDot completed" />Completed</span>
             </div>
           </section>
         </>
@@ -256,6 +267,7 @@ export default function MailsPage({
                     <option value="all">All statuses</option>
                     <option value="new">New</option>
                     <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
                   </select>
                 </label>
                 <label>

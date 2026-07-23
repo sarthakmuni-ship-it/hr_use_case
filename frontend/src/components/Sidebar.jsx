@@ -7,7 +7,7 @@ export default function Sidebar({ account, activeView, onLogout, onNavigate }) {
     { id: "mails", label: "Background Verification", icon: Inbox },
     { id: "verification", label: "Document Verification", icon: FileCheck2 },
     { id: "settings", label: "Settings", icon: Settings },
-    { id: "logs", label: "History", icon: ListChecks },
+    { id: "logs", label: "Logs", icon: ListChecks },
     ...(account?.role === "admin"
       ? [{ id: "users", label: "Users", icon: Users }]
       : []),

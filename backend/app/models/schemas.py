@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -137,6 +138,20 @@ class DecisionLogResponse(BaseModel):
     note: str | None = None
     sent_reply: str | None = None
     decided_at: datetime
+
+
+class AuditLogResponse(BaseModel):
+    """Unified audit row for email, document verification, and user management events."""
+
+    id: str
+    timestamp: datetime
+    log_id: str
+    module: str
+    action: str
+    actor_name: str
+    target: str
+    status: str
+    details: dict[str, Any]
 
 
 class LlmTestRequest(BaseModel):

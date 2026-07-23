@@ -282,6 +282,8 @@ button {
     linear-gradient(180deg, rgba(37, 99, 235, 0.08), transparent 260px),
     var(--bg-app);
   min-height: 100vh;
+  min-width: 0;
+  overflow-x: hidden;
   padding: 18px;
 }
 
@@ -289,6 +291,7 @@ button {
 .contentPage {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .pageTitleRow {
@@ -353,6 +356,7 @@ button {
   border-radius: 8px;
   box-shadow: 0 14px 34px rgba(2, 6, 23, 0.16);
   color: var(--text-main);
+  min-width: 0;
   padding: 14px;
 }
 
@@ -2679,6 +2683,235 @@ textarea {
   grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.7fr) auto;
 }
 
+.auditControlBar {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 260px);
+  min-width: 0;
+  padding: 12px;
+}
+
+.auditSearchField,
+.auditModuleSelect {
+  align-items: center;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 9px;
+  min-height: 42px;
+  min-width: 0;
+  padding: 0 11px;
+}
+
+.auditSearchField input,
+.auditModuleSelect select {
+  background: transparent;
+  border: 0;
+  color: var(--text-main);
+  min-height: 40px;
+  outline: 0;
+  width: 100%;
+}
+
+.auditSearchField input::placeholder {
+  color: var(--text-muted);
+}
+
+.auditModuleSelect select {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.auditSearchField:focus-within,
+.auditModuleSelect:focus-within {
+  border-color: var(--primary);
+  outline: 2px solid var(--primary-soft);
+}
+
+.auditTableHeader {
+  justify-content: flex-start;
+}
+
+.auditTableHeader span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.auditTableWrap {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.auditLogTable {
+  min-width: 1040px;
+}
+
+.auditLogTable th:first-child,
+.auditLogTable td:first-child {
+  width: 48px;
+}
+
+.auditLogTable td:first-child {
+  font-weight: 400;
+  text-transform: none;
+}
+
+.auditLogTable td:last-child,
+.auditLogTable th:last-child {
+  text-align: left;
+  width: 110px;
+}
+
+.auditRow {
+  cursor: pointer;
+}
+
+.auditRow.expanded,
+.auditRow:hover {
+  background: var(--bg-muted);
+}
+
+.auditExpandCell {
+  color: var(--primary);
+  text-align: center;
+}
+
+.auditDetailRow > td {
+  background: var(--bg-muted);
+  padding: 14px;
+}
+
+.auditDetailRow:hover {
+  background: transparent;
+}
+
+.auditDetailGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.auditDetailPanel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 13px;
+}
+
+.auditDetailPanel h3 {
+  font-size: 14px;
+  margin: 0;
+}
+
+.auditWidePanel {
+  grid-column: 1 / -1;
+}
+
+.compactAuditMeta {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.compactAuditMeta dd {
+  font-weight: 650;
+}
+
+.auditFileList,
+.auditViolationList {
+  display: grid;
+  gap: 9px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.auditFileItem,
+.auditViolationList li {
+  align-items: center;
+  background: var(--bg-row);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  padding: 10px 11px;
+}
+
+.auditFileItem.passed svg:first-child {
+  color: var(--success);
+}
+
+.auditFileItem.failed,
+.auditViolationList li {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.auditFileItem.failed svg:first-child {
+  color: var(--danger);
+}
+
+.auditFileItem small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.auditViolationList li {
+  align-items: flex-start;
+  grid-template-columns: 18px minmax(0, 1fr);
+}
+
+.auditViolationList svg {
+  color: var(--danger);
+  margin-top: 2px;
+}
+
+.auditTraceCopy {
+  align-items: center;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 7px;
+  min-height: 32px;
+  max-width: 100%;
+  padding: 7px 9px;
+}
+
+.auditTraceCopy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auditTraceCopy:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.auditJsonBlock {
+  margin: 0;
+  max-height: 260px;
+  min-height: 150px;
+}
+
+.auditNestedTable {
+  min-width: 640px;
+}
+
 .reviewNotesPanel {
   border-left: 4px solid var(--warning);
 }
@@ -2732,6 +2965,15 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .auditControlBar,
+  .auditDetailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .auditLogTable {
+    min-width: 920px;
+  }
+
   .emailFooter {
     min-width: 0;
   }
@@ -2745,5 +2987,9 @@ textarea {
 
   .metricGridFour {
     grid-template-columns: 1fr;
+  }
+
+  .auditLogTable {
+    min-width: 820px;
   }
 }

@@ -1,111 +1,249 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
-  Clock3,
-  Filter,
-  FileText,
-  Mail,
-  MessageSquareText,
-  Search,
-  UserRound,
-  XCircle,
-  ChevronLeft,
+  ChevronDown,
   ChevronRight,
+  CircleAlert,
+  Clipboard,
+  FileText,
+  Search,
+  ShieldCheck,
+  XCircle,
 } from "lucide-react";
-import { docVerificationApi, emailsApi, logsApi } from "../api";
-import { StatusBadge, VerificationStatusBadge } from "../components/Badges";
-import { formatDateTime } from "../utils/date";
+import { logsApi } from "../api";
 import ProfileDropdown from "../components/ProfileDropdown";
-import SubmissionDetailModal from "../components/SubmissionDetailModal";
 
-function formatDecision(value) {
-  return value === "approve_reply" ? "Approved" : "Rejected";
+const MODULE_OPTIONS = ["All Modules", "DOC_VERIFICATION", "EMAIL_BGV", "USER_MGMT"];
+
+function formatUtcDateTime(value) {
+  if (!value) return "Not available";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not available";
+
+  try {
+    return new Intl.DateTimeFormat("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZone: "UTC",
+      timeZoneName: "short",
+    }).format(date);
+  } catch (error) {
+    return date.toISOString().replace("T", " ").replace("Z", " UTC");
+  }
 }
 
-function decisionBadgeClass(value) {
-  return value === "approve_reply" ? "badge badgeMatch" : "badge badgeMismatch";
+function statusClass(status) {
+  if (status === "SUCCESS") return "badge badgeMatch";
+  if (status === "FAILED") return "badge badgeMismatch";
+  return "workflowBadge workflowPending";
+}
+
+function maskSensitiveText(value) {
+  return String(value)
+    .replace(/\b[A-Z]{5}\d{4}[A-Z]\b/g, "[Redacted]")
+    .replace(/\b(?:\d[ -]?){12}\b/g, "[Redacted]");
+}
+
+function DetailField({ label, value }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
+function TraceField({ traceId }) {
+  async function copyTraceId() {
+    await navigator.clipboard?.writeText(traceId);
+  }
+
+  return (
+    <button className="auditTraceCopy" onClick={copyTraceId} type="button" title="Copy Trace ID">
+      <Clipboard size={14} />
+      <span>{traceId}</span>
+    </button>
+  );
+}
+
+function DocVerificationDetails({ details }) {
+  const files = Array.isArray(details.files) ? details.files : [];
+  const flags = Array.isArray(details.flags) ? details.flags : [];
+
+  return (
+    <div className="auditDetailGrid">
+      <section className="auditDetailPanel">
+        <h3>Candidate Summary</h3>
+        <dl className="auditMetaGrid compactAuditMeta">
+          <DetailField label="Candidate Name" value={details.candidateName} />
+          <DetailField label="Candidate Reference ID" value={details.candidateReferenceId} />
+          <DetailField label="Overall Dossier Status" value={details.overallDossierStatus} />
+        </dl>
+      </section>
+      <section className="auditDetailPanel">
+        <h3>File Processing List</h3>
+        <div className="auditFileList">
+          {files.map((file) => (
+            <div className={file.passed ? "auditFileItem passed" : "auditFileItem failed"} key={file.fileName}>
+              {file.passed ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+              <span>{file.fileName}</span>
+              <small>{file.fileType}</small>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="auditDetailPanel auditWidePanel">
+        <h3>Flags and Rule Violations</h3>
+        <ul className="auditViolationList">
+          {flags.map((flag) => (
+            <li key={flag}>
+              <CircleAlert size={15} />
+              <span>{maskSensitiveText(flag)}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section className="auditDetailPanel auditWidePanel">
+        <h3>Metadata Footer</h3>
+        <dl className="auditMetaGrid compactAuditMeta">
+          <DetailField label="Execution Duration" value={`${details.executionDurationMs ?? 0} ms`} />
+          <DetailField label="Trace ID" value={<TraceField traceId={details.traceId} />} />
+        </dl>
+      </section>
+    </div>
+  );
+}
+
+function EmailBgvDetails({ details }) {
+  const discrepancies = Array.isArray(details.discrepancies) ? details.discrepancies : [];
+
+  return (
+    <div className="auditDetailGrid">
+      <section className="auditDetailPanel">
+        <h3>Email Metadata</h3>
+        <dl className="auditMetaGrid compactAuditMeta">
+          <DetailField label="Sender Email" value={details.senderEmail} />
+          <DetailField label="Recipient Inbox" value={details.recipientInbox} />
+          <DetailField label="Subject" value={details.emailSubject} />
+        </dl>
+      </section>
+      <section className="auditDetailPanel">
+        <h3>Verification Findings</h3>
+        <dl className="auditMetaGrid compactAuditMeta">
+          <DetailField label="Candidate Name" value={details.candidateName} />
+          <DetailField label="Outcome" value={details.outcome} />
+          <DetailField label="Verified Start" value={details.verifiedStartDate} />
+          <DetailField label="Verified End" value={details.verifiedEndDate} />
+        </dl>
+      </section>
+      <section className="auditDetailPanel auditWidePanel">
+        <h3>Discrepancy List</h3>
+        <div className="comparisonTableWrap">
+          <table className="comparisonTable auditNestedTable">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Claimed</th>
+                <th>Verified</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {discrepancies.map((item) => (
+                <tr key={item.item}>
+                  <td>{item.item}</td>
+                  <td>{item.claimed}</td>
+                  <td>{item.verified}</td>
+                  <td><span className={item.status === "Matched" ? "badge badgeMatch" : "badge badgeMismatch"}>{item.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section className="auditDetailPanel auditWidePanel">
+        <h3>Metadata Footer</h3>
+        <dl className="auditMetaGrid compactAuditMeta">
+          <DetailField label="Attachment" value={details.attachmentFilename} />
+          <DetailField label="Trace ID" value={<TraceField traceId={details.traceId} />} />
+        </dl>
+      </section>
+    </div>
+  );
+}
+
+function UserMgmtDetails({ details }) {
+  return (
+    <div className="auditDetailGrid">
+      <section className="auditDetailPanel">
+        <h3>Target Account Details</h3>
+        <dl className="auditMetaGrid compactAuditMeta">
+          <DetailField label="Target User Name" value={details.targetUserName} />
+          <DetailField label="Target Email" value={details.targetEmail} />
+          <DetailField label="Assigned Role" value={details.assignedRole} />
+          <DetailField label="Action Type" value={details.actionType} />
+        </dl>
+      </section>
+      <section className="auditDetailPanel">
+        <h3>Security Details</h3>
+        <dl className="auditMetaGrid compactAuditMeta">
+          <DetailField label="Client IP Address" value={details.clientIpAddress} />
+          <DetailField label="Geographic Location" value={details.geographicLocation} />
+          <DetailField label="Browser/User-Agent" value={details.browserUserAgent} />
+        </dl>
+      </section>
+      <section className="auditDetailPanel auditWidePanel">
+        <h3>State Change Data</h3>
+        <pre className="auditJsonBlock">{JSON.stringify(details.stateChange, null, 2)}</pre>
+      </section>
+    </div>
+  );
+}
+
+function AuditDetails({ log }) {
+  if (log.module === "DOC_VERIFICATION") return <DocVerificationDetails details={log.details} />;
+  if (log.module === "EMAIL_BGV") return <EmailBgvDetails details={log.details} />;
+  return <UserMgmtDetails details={log.details} />;
+}
+
+function normalizeAuditLog(log) {
+  return {
+    id: log.id,
+    timestamp: log.timestamp,
+    logId: log.log_id,
+    module: log.module,
+    action: log.action,
+    actorName: log.actor_name,
+    target: log.target,
+    status: log.status,
+    details: log.details || {},
+  };
 }
 
 export default function LogsPage({ account, onLogout, refreshSignal, onLoadingChange, onError }) {
   const [logs, setLogs] = useState([]);
-  const [docLogs, setDocLogs] = useState([]);
-  const [historyType, setHistoryType] = useState("background");
-  const [selectedLog, setSelectedLog] = useState(null);
-  const [selectedSubmissionId, setSelectedSubmissionId] = useState(null);
-  const [verificationByEmail, setVerificationByEmail] = useState({});
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [userFilter, setUserFilter] = useState("");
-  const [candidateFilter, setCandidateFilter] = useState("");
-  const [docStatusFilter, setDocStatusFilter] = useState("all");
-  const [page, setPage] = useState(1);
-  const itemsPerPage = 5;
-
-  const normalizedUserFilter = userFilter.trim().toLowerCase();
-  const normalizedCandidateFilter = candidateFilter.trim().toLowerCase();
-  const filteredLogs = normalizedUserFilter
-    ? logs.filter((log) => {
-        const userName = log.user_full_name || "";
-        const userEmail = log.user_email || "";
-        return `${userName} ${userEmail}`.toLowerCase().includes(normalizedUserFilter);
-      })
-    : logs;
-  const filteredDocLogs = docLogs.filter((log) => {
-    if (
-      normalizedCandidateFilter &&
-      !String(log.candidate_name || "").toLowerCase().includes(normalizedCandidateFilter)
-    ) {
-      return false;
-    }
-
-    if (docStatusFilter !== "all" && log.status !== docStatusFilter) {
-      return false;
-    }
-
-    return true;
-  });
-
-  const approvedCount = logs.filter((log) => log.decision === "approve_reply").length;
-  const rejectedCount = logs.filter((log) => log.decision === "reject_reply").length;
-  const decisionTotal = Math.max(logs.length, 1);
-  const docVerifiedCount = docLogs.filter((log) => log.status === "VERIFIED").length;
-  const docReviewCount = docLogs.filter((log) => log.status === "NEEDS_HUMAN_REVIEW").length;
-  const selectedVerification = selectedLog ? verificationByEmail[selectedLog.email_id] : null;
-  const sentReplyText =
-    selectedLog?.sent_reply ||
-    selectedVerification?.recommended_reply ||
-    "No sent reply was captured for this log.";
+  const [loaded, setLoaded] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [moduleFilter, setModuleFilter] = useState("All Modules");
+  const [expandedLogIds, setExpandedLogIds] = useState(() => new Set());
 
   async function loadLogs() {
-    onLoadingChange(true);
-    onError("");
+    onLoadingChange?.(true);
+    onError?.("");
 
     try {
-      const [mailLogs, documentLogs] = await Promise.all([
-        logsApi.list(),
-        docVerificationApi.list(),
-      ]);
-      setLogs(mailLogs);
-      setDocLogs(documentLogs);
+      const data = await logsApi.list();
+      setLogs(data.map(normalizeAuditLog));
     } catch (err) {
-      onError(err.message);
+      onError?.(err.message);
     } finally {
-      onLoadingChange(false);
-    }
-  }
-
-  async function openLog(log) {
-    setSelectedLog(log);
-
-    if (verificationByEmail[log.email_id]) return;
-
-    try {
-      const verification = await emailsApi.verification(log.email_id);
-      setVerificationByEmail((current) => ({
-        ...current,
-        [log.email_id]: verification,
-      }));
-    } catch (err) {
-      onError(err.message);
+      setLoaded(true);
+      onLoadingChange?.(false);
     }
   }
 
@@ -113,395 +251,116 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
     loadLogs();
   }, [refreshSignal]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [userFilter, candidateFilter, docStatusFilter, historyType]);
+  const filteredLogs = useMemo(() => {
+    const query = searchText.trim().toLowerCase();
+    return logs.filter((log) => {
+      const matchesModule = moduleFilter === "All Modules" || log.module === moduleFilter;
+      const matchesSearch =
+        !query ||
+        log.actorName.toLowerCase().includes(query) ||
+        log.logId.toLowerCase().includes(query);
+      return matchesModule && matchesSearch;
+    });
+  }, [logs, moduleFilter, searchText]);
 
-  const activeRows = historyType === "background" ? filteredLogs : filteredDocLogs;
-  const totalPages = Math.ceil(activeRows.length / itemsPerPage) || 1;
-  const startIndex = (page - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, activeRows.length);
-  const paginatedLogs = filteredLogs.slice(startIndex, startIndex + itemsPerPage);
-  const paginatedDocLogs = filteredDocLogs.slice(startIndex, startIndex + itemsPerPage);
-  const activeFilterCount =
-    historyType === "background"
-      ? Number(Boolean(userFilter))
-      : [Boolean(candidateFilter), docStatusFilter !== "all"].filter(Boolean).length;
+  function toggleRow(logId) {
+    setExpandedLogIds((current) => {
+      const next = new Set(current);
+      if (next.has(logId)) {
+        next.delete(logId);
+      } else {
+        next.add(logId);
+      }
+      return next;
+    });
+  }
 
   return (
     <section className="contentPage">
       <div className="pageTitleRow">
         <div>
-          <p className="eyebrow">Audit trail</p>
-          <h1>History</h1>
+          <p className="eyebrow">Enterprise audit trail</p>
+          <h1>Audit Logs</h1>
         </div>
-        <div className="logToolbar">
-          <button
-            aria-label="Filter history"
-            aria-pressed={filtersOpen}
-            className={filtersOpen || activeFilterCount ? "iconAction active" : "iconAction"}
-            onClick={() => setFiltersOpen((current) => !current)}
-            title="Filter history"
-            type="button"
-          >
-            <Filter size={17} />
-            {activeFilterCount > 0 && <span className="filterCount">{activeFilterCount}</span>}
-          </button>
-          <ProfileDropdown account={account} onLogout={onLogout} />
-        </div>
+        <ProfileDropdown account={account} onLogout={onLogout} />
       </div>
-      <section className="historyToggleGroup" aria-label="History type">
-        <button
-          className={historyType === "background" ? "historyToggle active" : "historyToggle"}
-          onClick={() => setHistoryType("background")}
-          type="button"
-        >
-          <Mail size={16} />
-          Background Verification
-        </button>
-        <button
-          className={historyType === "documents" ? "historyToggle active" : "historyToggle"}
-          onClick={() => setHistoryType("documents")}
-          type="button"
-        >
-          <FileText size={16} />
-          Document Verification
-        </button>
-      </section>
-      <section className="metricGrid">
-        {historyType === "background" ? (
-          <>
-            <article className="metricCard">
-              <span className="metricIcon success"><CheckCircle2 size={18} /></span>
-              <div><small>Approved</small><strong>{approvedCount}</strong></div>
-            </article>
-            <article className="metricCard">
-              <span className="metricIcon danger"><XCircle size={18} /></span>
-              <div><small>Rejected</small><strong>{rejectedCount}</strong></div>
-            </article>
-            <article className="metricCard">
-              <span className="metricIcon"><Search size={18} /></span>
-              <div><small>Visible History</small><strong>{filteredLogs.length}</strong></div>
-            </article>
-          </>
-        ) : (
-          <>
-            <article className="metricCard">
-              <span className="metricIcon success"><CheckCircle2 size={18} /></span>
-              <div><small>Verified</small><strong>{docVerifiedCount}</strong></div>
-            </article>
-            <article className="metricCard">
-              <span className="metricIcon danger"><XCircle size={18} /></span>
-              <div><small>Needs Review</small><strong>{docReviewCount}</strong></div>
-            </article>
-            <article className="metricCard">
-              <span className="metricIcon"><Search size={18} /></span>
-              <div><small>Visible History</small><strong>{filteredDocLogs.length}</strong></div>
-            </article>
-          </>
-        )}
-      </section>
-      {historyType === "background" && (
-        <section className="panel statusOverview">
-          <div className="statusOverviewHeader">
-            <span>Decision Mix</span>
-            <strong>{logs.length} total</strong>
-          </div>
-          <div className="statusBar" aria-label="Decision distribution">
-            <span className="statusSegment completed" style={{ width: `${(approvedCount / decisionTotal) * 100}%` }} />
-            <span className="statusSegment rejected" style={{ width: `${(rejectedCount / decisionTotal) * 100}%` }} />
-          </div>
-          <div className="statusLegend">
-            <span><i className="legendDot completed" />Approved</span>
-            <span><i className="legendDot rejected" />Rejected</span>
-          </div>
-        </section>
-      )}
-      {filtersOpen && (
-        <section className="panel filterPanel">
-          {historyType === "background" ? (
-            <div className="logFilterControls">
-              <label>
-                Processed by
-                <input
-                  onChange={(event) => setUserFilter(event.target.value)}
-                  placeholder="Search name or email"
-                  type="search"
-                  value={userFilter}
-                />
-              </label>
-              <button className="filterClear" disabled={!userFilter} onClick={() => setUserFilter("")} type="button">
-                <XCircle size={15} />
-                Clear
-              </button>
-            </div>
-          ) : (
-            <div className="logFilterControls documentHistoryFilters">
-              <label>
-                Candidate name
-                <input
-                  onChange={(event) => setCandidateFilter(event.target.value)}
-                  placeholder="Search candidate"
-                  type="search"
-                  value={candidateFilter}
-                />
-              </label>
-              <label>
-                Status
-                <select onChange={(event) => setDocStatusFilter(event.target.value)} value={docStatusFilter}>
-                  <option value="all">All statuses</option>
-                  <option value="PROCESSING">Processing</option>
-                  <option value="VERIFIED">Verified</option>
-                  <option value="NEEDS_HUMAN_REVIEW">Needs Review</option>
-                  <option value="PENDING_DOCUMENTS">Pending Documents</option>
-                  <option value="SYSTEM_ERROR">System Error</option>
-                </select>
-              </label>
-              <button
-                className="filterClear"
-                disabled={!candidateFilter && docStatusFilter === "all"}
-                onClick={() => {
-                  setCandidateFilter("");
-                  setDocStatusFilter("all");
-                }}
-                type="button"
-              >
-                <XCircle size={15} />
-                Clear
-              </button>
-            </div>
-          )}
-        </section>
-      )}
-      <section className="panel">
-        <div className="panelHeader">
-          <h2>{historyType === "background" ? "Background Verification History" : "Document Verification History"}</h2>
-        </div>
-        {historyType === "background" ? (
-          <div className="logList">
-            {paginatedLogs.map((log) => (
-              <article className="logItem" key={log.id}>
-                <button className="logSummary" onClick={() => openLog(log)} type="button">
-                  <FileText size={17} />
-                  <span>
-                    <strong>{log.user_full_name || "Unknown user"}</strong>
-                    <small>{log.user_email || "No email"}</small>
-                  </span>
-                  <span>{log.email_subject}</span>
-                  <span className="decisionText">{formatDecision(log.decision)}</span>
-                  <span>{formatDateTime(log.decided_at)}</span>
-                </button>
-              </article>
+
+      <section className="panel auditControlBar" aria-label="Audit log controls">
+        <label className="auditSearchField">
+          <Search size={16} />
+          <input
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder="Search by User (Actor) Name or Log ID..."
+            type="search"
+            value={searchText}
+          />
+        </label>
+        <label className="auditModuleSelect">
+          <ShieldCheck size={16} />
+          <select onChange={(event) => setModuleFilter(event.target.value)} value={moduleFilter}>
+            {MODULE_OPTIONS.map((module) => (
+              <option key={module} value={module}>{module}</option>
             ))}
-          </div>
-        ) : (
-          <div className="comparisonTableWrap">
-            <table className="comparisonTable">
-              <thead>
-                <tr>
-                  <th>Candidate</th>
-                  <th>Status</th>
-                  <th>Verdict</th>
-                  <th>Issues</th>
-                  <th>Updated</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedDocLogs.map((log) => (
-                  <tr className="clickable" key={log.id} onClick={() => setSelectedSubmissionId(log.id)}>
-                    <td>{log.candidate_name}</td>
-                    <td><VerificationStatusBadge status={log.status} /></td>
-                    <td>{log.verdict_summary || log.summary || log.status}</td>
-                    <td>{log.issue_count}</td>
-                    <td>{formatDateTime(log.updated_at || log.created_at)}</td>
-                    <td>
-                      <button
-                        className="paginationBtn"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setSelectedSubmissionId(log.id);
-                        }}
-                        type="button"
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {activeRows.length > 0 && (
-          <div className="paginationRow">
-            <span className="paginationInfo">
-              Showing {startIndex + 1}–{endIndex} of {activeRows.length}
-            </span>
-            <div className="paginationButtons">
-              <button
-                className="paginationBtn"
-                onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                disabled={page === 1}
-                type="button"
-              >
-                <ChevronLeft size={14} />
-                Prev
-              </button>
-              <button
-                className="paginationBtn"
-                onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
-                disabled={page === totalPages}
-                type="button"
-              >
-                Next
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        )}
-        {!activeRows.length && (
-          <p className="emptyText">
-            {historyType === "background"
-              ? logs.length ? "No history records match the current filter." : "No approval or rejection history yet."
-              : docLogs.length ? "No document history records match the current filter." : "No document verification history yet."}
-          </p>
-        )}
+          </select>
+        </label>
       </section>
-      {selectedLog && (
-        <div className="logModal" role="dialog" aria-modal="true">
-          <div className="logModalPanel">
-            <header className="logModalHeader">
-              <div>
-                <span className={decisionBadgeClass(selectedLog.decision)}>
-                  {formatDecision(selectedLog.decision)}
-                </span>
-                <h2>{selectedLog.email_subject}</h2>
-              </div>
-              <button
-                aria-label="Close log details"
-                className="iconAction"
-                onClick={() => setSelectedLog(null)}
-                title="Close"
-                type="button"
-              >
-                <XCircle size={17} />
-              </button>
-            </header>
 
-            <section className="auditSummary">
-              <div className="auditDecision">
-                {selectedLog.decision === "approve_reply" ? (
-                  <CheckCircle2 size={20} />
-                ) : (
-                  <XCircle size={20} />
-                )}
-                <div>
-                  <strong>{selectedLog.email_subject}</strong>
-                  <small className="emptyText">Decision and response details</small>
-                </div>
-              </div>
-
-              <dl className="auditMetaGrid">
-                <div>
-                  <dt>
-                    <UserRound size={14} />
-                    Decision by
-                  </dt>
-                  <dd>{selectedLog.user_full_name || "Unknown user"}</dd>
-                </div>
-                <div>
-                  <dt>
-                    <Mail size={14} />
-                    User email
-                  </dt>
-                  <dd>{selectedLog.user_email || "No email"}</dd>
-                </div>
-                <div>
-                  <dt>
-                    <Clock3 size={14} />
-                    Decision time
-                  </dt>
-                  <dd>{formatDateTime(selectedLog.decided_at)}</dd>
-                </div>
-                <div>
-                  <dt>
-                    <FileText size={14} />
-                    Match status
-                  </dt>
-                  <dd>
-                    {selectedVerification ? (
-                      <StatusBadge match={selectedVerification.all_fields_match} />
-                    ) : (
-                      <span className="emptyText">Loading...</span>
-                    )}
-                  </dd>
-                </div>
-              </dl>
-
-              {selectedLog.note && (
-                <div className="auditNote">
-                  <strong>Decision Note</strong>
-                  <p>{selectedLog.note}</p>
-                </div>
-              )}
-            </section>
-
-            <div className="modalSplit">
-              <section className="modalSection">
-                <div className="modalSectionHeader">
-                  <FileText size={16} />
-                  <h3>Matching Contents</h3>
-                </div>
-                {selectedVerification?.field_results?.length ? (
-                  <div className="comparisonTableWrap">
-                    <table className="comparisonTable">
-                      <thead>
-                        <tr>
-                          <th>Field</th>
-                          <th>Claimed Value</th>
-                          <th>Workday Value</th>
-                          <th>Result</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedVerification.field_results.map((field) => (
-                          <tr key={field.field}>
-                            <td>{field.field.replaceAll("_", " ")}</td>
-                            <td>{field.claimed_value || "Missing"}</td>
-                            <td>{field.workday_value || "Not found"}</td>
-                            <td>
-                              <StatusBadge match={field.matches} />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : selectedVerification ? (
-                  <p className="emptyPanelText">No matching contents available.</p>
-                ) : (
-                  <p className="emptyText">Loading matching contents...</p>
-                )}
-              </section>
-
-              <section className="modalSection">
-                <div className="modalSectionHeader">
-                  <MessageSquareText size={16} />
-                  <h3>Sent Reply</h3>
-                </div>
-                <pre className="sentReplyBox">{sentReplyText}</pre>
-              </section>
-            </div>
-          </div>
+      <section className="panel">
+        <div className="panelHeader auditTableHeader">
+          <FileText size={18} />
+          <h2>Activity Register</h2>
+          <span>{filteredLogs.length} records</span>
         </div>
-      )}
-      {selectedSubmissionId && (
-        <SubmissionDetailModal
-          onClose={() => setSelectedSubmissionId(null)}
-          submissionId={selectedSubmissionId}
-        />
-      )}
+        <div className="comparisonTableWrap auditTableWrap">
+          <table className="comparisonTable auditLogTable">
+            <thead>
+              <tr>
+                <th aria-label="Expand row"></th>
+                <th>Timestamp</th>
+                <th>Log ID</th>
+                <th>Module Name</th>
+                <th>Action</th>
+                <th>Actor Name</th>
+                <th>Target / Candidate</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLogs.map((log) => {
+                const isExpanded = expandedLogIds.has(log.logId);
+                return (
+                  <Fragment key={log.logId}>
+                    <tr
+                      className={isExpanded ? "clickable auditRow expanded" : "clickable auditRow"}
+                      onClick={() => toggleRow(log.logId)}
+                    >
+                      <td className="auditExpandCell">
+                        {isExpanded ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
+                      </td>
+                      <td>{formatUtcDateTime(log.timestamp)}</td>
+                      <td>{log.logId}</td>
+                      <td><span className="badge badgeToggle">{log.module}</span></td>
+                      <td>{log.action}</td>
+                      <td>{log.actorName}</td>
+                      <td>{log.target}</td>
+                      <td><span className={statusClass(log.status)}>{log.status}</span></td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="auditDetailRow">
+                        <td colSpan={8}>
+                          <AuditDetails log={log} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {!loaded && <p className="emptyText">Loading audit logs...</p>}
+        {loaded && !filteredLogs.length && <p className="emptyText">No audit logs match the current controls.</p>}
+      </section>
     </section>
   );
 }
