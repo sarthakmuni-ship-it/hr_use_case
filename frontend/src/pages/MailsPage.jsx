@@ -166,7 +166,7 @@ export default function MailsPage({
       <header className="pageTitleRow">
         <div>
           <p className="eyebrow">JADE background verification</p>
-          <h1>Mails</h1>
+          <h1>MAILS</h1>
         </div>
         <div className="mailToolbar">
           <button

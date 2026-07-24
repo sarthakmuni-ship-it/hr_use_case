@@ -14,6 +14,7 @@ import { logsApi } from "../api";
 import ProfileDropdown from "../components/ProfileDropdown";
 
 const MODULE_OPTIONS = ["All Modules", "DOC_VERIFICATION", "EMAIL_BGV", "USER_MGMT"];
+const ITEMS_PER_PAGE = 10; // Defined items per page
 
 function formatUtcDateTime(value) {
   if (!value) return "Not available";
@@ -108,13 +109,13 @@ function DocVerificationDetails({ details }) {
           ))}
         </ul>
       </section>
-      <section className="auditDetailPanel auditWidePanel">
+      {/* <section className="auditDetailPanel auditWidePanel">
         <h3>Metadata Footer</h3>
         <dl className="auditMetaGrid compactAuditMeta">
           <DetailField label="Execution Duration" value={`${details.executionDurationMs ?? 0} ms`} />
           <DetailField label="Trace ID" value={<TraceField traceId={details.traceId} />} />
         </dl>
-      </section>
+      </section> */}
     </div>
   );
 }
@@ -165,13 +166,6 @@ function EmailBgvDetails({ details }) {
             </tbody>
           </table>
         </div>
-      </section>
-      <section className="auditDetailPanel auditWidePanel">
-        <h3>Metadata Footer</h3>
-        <dl className="auditMetaGrid compactAuditMeta">
-          <DetailField label="Attachment" value={details.attachmentFilename} />
-          <DetailField label="Trace ID" value={<TraceField traceId={details.traceId} />} />
-        </dl>
       </section>
     </div>
   );
@@ -231,6 +225,9 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
   const [searchText, setSearchText] = useState("");
   const [moduleFilter, setModuleFilter] = useState("All Modules");
   const [expandedLogIds, setExpandedLogIds] = useState(() => new Set());
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
 
   async function loadLogs() {
     onLoadingChange?.(true);
@@ -262,6 +259,19 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
       return matchesModule && matchesSearch;
     });
   }, [logs, moduleFilter, searchText]);
+
+  // Reset to page 1 whenever filters change so users don't get stuck on an empty page
+  useEffect(() => {
+    setCurrentPage(1);
+    setExpandedLogIds(new Set()); // Optionally close expanded rows on search
+  }, [searchText, moduleFilter]);
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
+  const paginatedLogs = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredLogs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredLogs, currentPage]);
 
   function toggleRow(logId) {
     setExpandedLogIds((current) => {
@@ -305,12 +315,13 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
         </label>
       </section>
 
-      <section className="panel">
+      <section className="panel" style={{ paddingBottom: 0 }}>
         <div className="panelHeader auditTableHeader">
           <FileText size={18} />
           <h2>Activity Register</h2>
           <span>{filteredLogs.length} records</span>
         </div>
+        
         <div className="comparisonTableWrap auditTableWrap">
           <table className="comparisonTable auditLogTable">
             <thead>
@@ -326,7 +337,8 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.map((log) => {
+              {/* Render paginatedLogs instead of filteredLogs */}
+              {paginatedLogs.map((log) => {
                 const isExpanded = expandedLogIds.has(log.logId);
                 return (
                   <Fragment key={log.logId}>
@@ -358,8 +370,34 @@ export default function LogsPage({ account, onLogout, refreshSignal, onLoadingCh
             </tbody>
           </table>
         </div>
-        {!loaded && <p className="emptyText">Loading audit logs...</p>}
-        {loaded && !filteredLogs.length && <p className="emptyText">No audit logs match the current controls.</p>}
+
+        {/* Pagination UI rendering below the table */}
+        {loaded && filteredLogs.length > 0 && (
+          <div className="paginationRow">
+            <span className="paginationInfo">
+              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} of {filteredLogs.length} entries
+            </span>
+            <div className="paginationButtons">
+              <button 
+                className="paginationBtn" 
+                disabled={currentPage === 1} 
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </button>
+              <button 
+                className="paginationBtn" 
+                disabled={currentPage >= totalPages} 
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!loaded && <p className="emptyText" style={{ padding: 14 }}>Loading audit logs...</p>}
+        {loaded && !filteredLogs.length && <p className="emptyText" style={{ padding: 14 }}>No audit logs match the current controls.</p>}
       </section>
     </section>
   );

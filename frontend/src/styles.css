@@ -878,10 +878,31 @@ tbody tr:hover {
   white-space: pre-wrap;
 }
 
-.comparisonTableWrap {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow-x: auto;
+.comparisonTable {
+  min-width: 720px;
+}
+
+/* ADD THIS RULE */
+.comparisonTable th:first-child,
+.comparisonTable td:first-child {
+  width: 220px; /* Adjust between 200px - 240px depending on preference */
+}
+
+.comparisonTable th {
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.comparisonTable td:first-child {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.comparisonTable td:last-child,
+.comparisonTable th:last-child {
+  text-align: right;
+  width: 120px;
 }
 
 .logModal {
@@ -919,11 +940,16 @@ tbody tr:hover {
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  padding-bottom: 12px;
+  
+  /* --- The Fix --- */
+  margin: -14px -14px 0 -14px;  /* Pulls the header into the parent's padding area */
+  padding: 14px 14px 12px 14px; /* Re-adds the visual padding inside the header */
   position: sticky;      
-  top: 0;               
+  top: -14px;                   /* Sticks perfectly to the true top edge */
+  /* --------------- */
+  
   background: var(--bg-card);  
-  z-index: 2;             
+  z-index: 10;                  /* Slightly increased to prevent overlapping bugs */
 }
 
 .logModalHeader > div {
@@ -2992,4 +3018,10 @@ textarea {
   .auditLogTable {
     min-width: 820px;
   }
+}
+
+.auditNestedTable th:first-child,
+.auditNestedTable td:first-child {
+  width: 240px;
+  min-width: 240px;
 }

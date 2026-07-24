@@ -134,6 +134,39 @@ export default function DashboardPage({ account, onLogout, onNavigate, onError }
     return map[status] || status;
   }
 
+function getStatusStyle(status) {
+    const baseStyle = {
+      padding: "4px 10px",
+      borderRadius: "999px",
+      fontSize: "12px",
+      fontWeight: "600",
+      whiteSpace: "nowrap",
+      color: "#ffffff", // Crisp white text ensures readability in both themes
+      border: "none",
+    };
+
+    if (["VERIFIED", "completed"].includes(status)) {
+      return {
+        ...baseStyle,
+        backgroundColor: "#10b981", // Solid Emerald Green
+        boxShadow: "0 2px 4px rgba(16, 185, 129, 0.2)", // Subtle drop shadow
+      };
+    }
+    if (["NEEDS_HUMAN_REVIEW", "pending"].includes(status)) {
+      return {
+        ...baseStyle,
+        backgroundColor: "#f24848", // Solid Amber/Orange
+        boxShadow: "0 2px 4px rgba(245, 158, 11, 0.2)",
+      };
+    }
+    
+    // Default fallback style for other statuses
+    return {
+      ...baseStyle,
+      backgroundColor: "#64748b", // Solid Slate Grey
+    };
+  }
+
   const docTotal = Math.max(submissions.length, 1);
   const mailTotal = Math.max(stats.mailsNew + stats.mailsPending, 1);
 
@@ -202,17 +235,35 @@ export default function DashboardPage({ account, onLogout, onNavigate, onError }
         </article>
       </section>
 
-      <div style={{ display: "grid", gridTemplateColumns: "0.8fr 1.2fr", gap: 14, marginTop: 14 }}>
-
+      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.2fr", gap: 14, marginTop: 14 }}>
         <section
           className="panel"
           onClick={() => onNavigate("mails")}
-          style={{ display: "flex", flexDirection: "column", height: "100%", cursor: "pointer" }}
+          style={{ display: "flex", flexDirection: "column", height: "100%", cursor: "pointer", width: "100%" }}
         >
-          <div className="panelHeader" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-            <h2>Mails</h2>
-            <span className="badge badgeToggle"><Mail size={12} />{attentionItems.length} new</span>
-          </div>
+      <div className="panelHeader" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+        <h2>Mails</h2>
+        {attentionItems.length > 0 && (
+          <span 
+            className="badge" 
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              backgroundColor: "#696cd1", // Bright red notification color
+              color: "#ffffff",
+              fontWeight: "600",
+              padding: "4px 10px",
+              borderRadius: "999px",
+              boxShadow: "0 0 10px rgba(102, 68, 239, 0.4)", // Soft glow effect
+              border: "none"
+            }}
+          >
+            <Mail size={12} />
+            {attentionItems.length} new
+          </span>
+        )}
+      </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             {attentionItems.length === 0 ? (
               <p className="emptyText">No new mails right now.</p>
@@ -221,10 +272,29 @@ export default function DashboardPage({ account, onLogout, onNavigate, onError }
                 <div
                   className="emailRow"
                   key={item.id}
-                  style={{ textAlign: "left", width: "100%", cursor: "default" }}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "12px",
+                    textAlign: "left",
+                    width: "100%",
+                    cursor: "default"
+                  }}
                 >
-                  <span className="emailSubject">{item.title}</span>
-                  <span className="emailMeta">{item.subtitle}</span>
+                  <span className="emailSubject" style={{ flex: 1, minWidth: 0 }}>
+                    {item.title}
+                  </span>
+                  <span
+                    className="emailMeta"
+                    style={{
+                      flex: 1.5,
+                      minWidth: 0,
+                      wordBreak: "break-word",
+                      overflowWrap: "anywhere"
+                    }}
+                  >
+                    {item.subtitle}
+                  </span>
                 </div>
               ))
             )}
@@ -285,7 +355,7 @@ export default function DashboardPage({ account, onLogout, onNavigate, onError }
                     <span className="emailSubject" style={{ display: "block" }}>{c.name}</span>
                     <span className="emailMeta" style={{ display: "block" }}>{c.subtitle}</span>
                   </span>
-                  <span className={statusBadgeClass(c.status)}>{statusLabel(c.status)}</span>
+                  <span style={getStatusStyle(c.status)}>{statusLabel(c.status)}</span>
                 </div>
               ))
             )}
@@ -304,7 +374,6 @@ export default function DashboardPage({ account, onLogout, onNavigate, onError }
             </button>
           </div>
         </section>
-
       </div>
     </section>
   );
